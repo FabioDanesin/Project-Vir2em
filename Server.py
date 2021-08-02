@@ -1,9 +1,12 @@
 from opcua import Server, Node
 import time
 
-URL = 'opc.tcp://157.138.24.165:4840'
-NAME = 'testserver'
-NAMESPACE = 'testnamespace'
+IP = "157.138.24.165"
+PORT = "4840"
+URL = "opc.tcp://" + IP + ":" + PORT
+
+NAME = "testserver"
+NAMESPACE = "testnamespace"
 
 
 def setup():
