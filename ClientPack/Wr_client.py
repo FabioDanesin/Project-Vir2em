@@ -1,5 +1,5 @@
 import Client
-
+from opcua import Node
 
 # Inutile
 def tuple_to_list(tup_in):
@@ -38,7 +38,7 @@ class Actor:
                 # Non implemento questo check ulteriormente perchè ne sto cercando di migliori
                 a.set_value(a.get_value())
             except Exception:
-                canwrite = False #
+                canwrite = False
             finally:
                 self.__parameter_nodes.append(
                     (
@@ -48,16 +48,31 @@ class Actor:
                     )
                 )
 
-    def get_variable(self, name: str):
-        for a in self.get_parameters():
-            if a.get_browse_name().Name == name:
-                return a
-        raise RuntimeError().__cause__
+    def __get_variable(self, name: str):
+        settable, v = False , None
+        for a in self.__parameter_nodes:
+            if a[0] == name:
+                settable, v = a[1], a[2]
 
+        return settable, v
+
+    def get_variable(self, name, value):
+        _dontcare, variable = self.__get_variable()
     def set_variable(self, name, value):
-        var = self.get_variable(name)
-        # TODO: implementare check per evitare setting di variabili read-only
-        var.set_value(value)
+        """
+        Permette di settare la variabile corrispondente al valore richiesto
+        :param name: Nome della variabile
+        :param value: Valore desiderato
+        :return: True se il valore è stato assegnato con successo, False altrimenti
+        """
+        rval = False
+        try:
+            can_set_variable , v = self.get_variable(name)
+            if can_set_variable:
+                v.set_value(value)
+                rval = True
+        finally:
+            return rval
 
     def get_parameters(self):
         return self.__monitor__.__parameters__
