@@ -2,17 +2,21 @@ import threading
 import time
 from opcua import Client
 
+# TODO: Implementare lettura da file per IP , port e base dell'url
+
 ip = "157.138.24.165"
 port = "4840"
-url = "opc.tcp://" + ip + ":" + port
+url_base = "opc.tcp://"
+url = url_base + ip + ":" + port
 
 
-class __Monitor:
+class Monitor:
     """
         Classe per monitorare i valori all'interno del controllore. Espone metodi di sola lettura dei valori nel
         controller e non chiede richiesta di autenticazione. NOTA CHE QUESTA CLASSE DEVE ESSERE ISTANZIATA UNA SOLA
         VOLTA!
     """
+
     # Istanze della classe monitor. La lunghezza della lista deve essere settata sempre a 1
 
     def __init__(self, update_time: float, _url: str = url, show_on_console: bool = True):
@@ -26,11 +30,12 @@ class __Monitor:
         """
 
         # Funzione per un thread daemon separato, esegue la lettura e il display dei valori contenuti nel controllore
-        # e li stampa a console. Da verificare se serve mantenerlo così o se è possibile usare una lambda
+        # e li stampa a console.
         def polling(sleeptime):
-            for d in self.__variables__:
-                print("|>" + d.get_browse_name().Name + " : " + str(d.get_value()))
-            time.sleep(sleeptime)
+            while True:
+                for d in self.__variables__:
+                    print("|>" + d.get_browse_name().Name + " : " + str(d.get_value()))
+                time.sleep(sleeptime)
 
         self.__monitorinstances__ = []
 
@@ -49,7 +54,7 @@ class __Monitor:
             self.__obj_node__ = self.__client__.get_objects_node()
 
             # Estrazione del nome del controller
-            controllername = open("ControllerName.txt", "r").readline(30)
+            controllername = open("ClientPack/ProjectData.txt", "r").readline(30).split(":")[1].strip("\n")
 
             # Estrazione delle variabili di stato del controller
             self.__controller_state_variables__ = self.__obj_node__.get_children()
@@ -57,7 +62,6 @@ class __Monitor:
 
             # Ottenimento dei parametri dal controller
             for data in self.__controller_state_variables__:
-
                 # Individua il nodo che contiene il nome del controller
                 if data.get_browse_name().Name == controllername:
 
@@ -74,16 +78,18 @@ class __Monitor:
 
             # Se a qualsiasi punto dovesse fallire il client si disconnetterà automaticamente
             print("Client has failed to connect at URL " + self.__url__)
+            self.__client__.close_session()
             self.__client__.disconnect()
+
             raise RuntimeError()
 
         if show_on_console:
             # TODO: verificare con ps a command line che questo thread muoia dopo la terminazione del mainthread
             t = threading.Thread(
+                name="Poller",
                 target=polling(update_time),
                 daemon=True
             )
-            t.start()
             t.join()
 
         self.__monitorinstances__ = [self]  # Proprietà singleton
@@ -111,7 +117,16 @@ class __Monitor:
 
 
 def testclassmonitor():
-    __Monitor(0.5)
+    e = Monitor(1)
+    t = threading.Thread(
+        name="Quitter",
+        target=lambda: (input("Press enter to quit")),
+        daemon=True
+    )
+    t.start()
+    print("fuck")
+    t.join()
+    e = None
 
 
 if __name__ == '__main__':

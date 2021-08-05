@@ -1,14 +1,10 @@
-######################################################
-# FIXME: import di psycopg2 fallisce, non so come mai
-######################################################
-from flask_sqlalchemy import *
 from sqlalchemy import MetaData, Table, Column, create_engine
 
 
-pgsql_name = "postgres"  # Nome del login su postgresql
-pgsql_password = "SuperUser"  # Password
-pgsql_ip = "127.0.0.1"      # IP su cui il DB è locato
-pgsql_port = "5432"         # port
+pgsql_name = "postgres"         # Nome del login su postgresql
+pgsql_password = "SuperUser"    # Password
+pgsql_ip = "127.0.0.1"          # IP su cui il DB è locato
+pgsql_port = "5432"             # port
 
 db_url = "postgresql://" + pgsql_name + "@" + pgsql_password + pgsql_ip + ":" + pgsql_port
 
@@ -22,6 +18,7 @@ class DBmanager:
     """
 
     def __init__(self, url):
+
         # Mantenimento della proprietà singleton assicurato tramite questo campo
         self.__exists__ = []
 
@@ -42,3 +39,5 @@ class DBmanager:
         # Questa classe serve per mantenere tutti di dati parzialmente parsati prima di "pusharli" sul database
         self.__metadata__ = MetaData()
 
+        # FIXME: trovare URL compatibile
+        self.__engine__.execute()

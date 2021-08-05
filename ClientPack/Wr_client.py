@@ -1,4 +1,4 @@
-import Client
+import Monitor
 from opcua import Node
 
 # Inutile
@@ -18,8 +18,8 @@ class Actor:
         pass
         # TODO: implementare login tramite DB 
 
-    def __init__(self, username, password, monitor: Client.__Monitor = Client.__Monitor.__get_instance__(),
-                 _url=Client.url):
+    def __init__(self, username, password, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__(),
+                 _url=Monitor.url):
 
         if not self.__check_login_credentials_(username, password):
             # Lo username e la password data non sono validi. Si lancia un errore e la sessione è terminata
@@ -49,6 +49,10 @@ class Actor:
                 )
 
     def __get_variable(self, name: str):
+        """
+            Metodo privato per l'ottentimento della variabile da scrivere. Ritorna la variabile e un booleano, che indica se 
+            è scrivibile o meno.
+        """
         settable, v = False , None
         for a in self.__parameter_nodes:
             if a[0] == name:
@@ -56,8 +60,9 @@ class Actor:
 
         return settable, v
 
-    def get_variable(self, name, value):
-        _dontcare, variable = self.__get_variable()
+    def get_variable(self, name):
+        return self.__get_variable(name)[1]
+
     def set_variable(self, name, value):
         """
         Permette di settare la variabile corrispondente al valore richiesto
@@ -67,7 +72,7 @@ class Actor:
         """
         rval = False
         try:
-            can_set_variable , v = self.get_variable(name)
+            can_set_variable , v = self.__get_variable(name)
             if can_set_variable:
                 v.set_value(value)
                 rval = True
@@ -75,4 +80,4 @@ class Actor:
             return rval
 
     def get_parameters(self):
-        return self.__monitor__.__parameters__
+        return self.__monitor__.__variables__
