@@ -5,7 +5,14 @@ instance = None
 
 
 class __Data__:
-    def __init__(self, Name="new_Controller_0", Ip="192.168.250.1", Port="4880", DbName=None, DbPsswd=None, DbIp=None) -> None:
+    def __init__(self,
+                 Name="new_Controller_0",
+                 Ip="192.168.250.1",
+                 Port="4880",
+                 DbName=None,
+                 DbPsswd=None,
+                 DbIp=None
+                 ) -> None:
         self.__Name__: str = Name
         self.__Ip__: str = Ip
         self.__Port__: str = Port
