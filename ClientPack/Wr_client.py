@@ -1,12 +1,11 @@
-import Monitor
-from opcua import Node
+import pathlib
 
-# Inutile
-def tuple_to_list(tup_in):
-    outl = []
-    for a in tup_in:
-        outl.append(a)
-    return outl
+import Monitor
+from DBmanager import DBmanager
+import Logger
+from Logger import Logger, Filetype
+
+_logs_path_ = pathlib.Path(__file__).parent.resolve().__str__()
 
 
 class Actor:
@@ -14,17 +13,20 @@ class Actor:
     Questa classe permette a un client di scrivere dati / mandare segnali ad un controllore. Mantiene gli stessi
     privilegi di lettura dati dal Monitor, con l'aggiunta di poter inviare segnali per la scrittura
     """
+
     def __check_login_credentials_(self, username, password):
-        pass
-        # TODO: implementare login tramite DB 
+        if self.__database__.check_credentials(username, password):
+            self.__logger__.write("User " + username + " ha effettuato il login")
 
     def __init__(self, username, password, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__(),
                  _url=Monitor.url):
 
         if not self.__check_login_credentials_(username, password):
-            # Lo username e la password data non sono validi. Si lancia un errore e la sessione è terminata
+            # Lo username e la user_password data non sono validi. Si lancia un errore e la sessione è terminata
             raise PermissionError()
-
+        self.__logger__ = Logger(_logs_path_, "Actor:" + username, Filetype.SHARED)
+        self.__logger__.write("Attore " + username + " ha effettuato il login con successo")
+        self.__database__ = DBmanager("")  # TODO: implementare lettura url tramite parser.
         self.__username__ = username
         self.__monitor__ = monitor
         self.__parameter_nodes = []
@@ -53,7 +55,7 @@ class Actor:
             Metodo privato per l'ottentimento della variabile da scrivere. Ritorna la variabile e un booleano, che indica se 
             è scrivibile o meno.
         """
-        settable, v = False , None
+        settable, v = False, None
         for a in self.__parameter_nodes:
             if a[0] == name:
                 settable, v = a[1], a[2]
@@ -70,12 +72,17 @@ class Actor:
         :param value: Valore desiderato
         :return: True se il valore è stato assegnato con successo, False altrimenti
         """
+        self.__logger__.write("Tentata scrittura della variabile " + name + " a " + str(value))
         rval = False
         try:
-            can_set_variable , v = self.__get_variable(name)
+            can_set_variable, v = self.__get_variable(name)
             if can_set_variable:
                 v.set_value(value)
                 rval = True
+            if rval:
+                self.__logger__.write("Variabile scritta con successo")
+            else:
+                self.__logger__.write("Variabile di sola lettura. Scrittura ignorata")
         finally:
             return rval
 
