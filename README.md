@@ -1,7 +1,7 @@
 Librerie usate per il progetto: 
->> freeopcua 
->> sqlaclhemy
->> flask
+- freeopcua 
+- sqlaclhemy
+- flask
 
 Tutte sono installate tramite pip. Pip dovrebbe essere già presente nell'installazione di python3, ma per usarlo dal cmd di Windows va inserito nelle variabili d'ambiente il percorso in cui il file è locato. 
 
