@@ -3,8 +3,10 @@ import pathlib
 import enum
 import os
 
-# Path verso la cartella logs
-_path = pathlib.Path(__file__).parent.resolve().__str__()
+from Control import Parser, KeyNames
+
+parsed_data = Parser.__Data__.Data()
+_path = pathlib.Path(parsed_data.get(KeyNames.logs)).parent.resolve().__str__()  # Path verso la cartella logs
 
 
 class Filetype(enum.Enum):
