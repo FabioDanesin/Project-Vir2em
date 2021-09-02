@@ -1,11 +1,6 @@
-import pathlib
-
-import Monitor
 from DBmanager import DBmanager
-import Logger
-from Logger import Logger, Filetype
-
-_logs_path_ = pathlib.Path(__file__).parent.resolve().__str__()
+from Control import Logger, Monitor, Parser
+from Control.Logger import Logger, Filetype
 
 
 class Actor:
@@ -14,7 +9,7 @@ class Actor:
     privilegi di lettura dati dal Monitor, con l'aggiunta di poter inviare segnali per la scrittura
     """
 
-    def __check_login_credentials_(self, username, password):
+    def __check_login_credentials_(self, username: str, password: str):
         if self.__database__.check_credentials(username, password):
             self.__logger__.write("User " + username + " ha effettuato il login")
 
@@ -24,9 +19,15 @@ class Actor:
         if not self.__check_login_credentials_(username, password):
             # Lo username e la user_password data non sono validi. Si lancia un errore e la sessione è terminata
             raise PermissionError()
-        self.__logger__ = Logger(_logs_path_, "Actor:" + username, Filetype.SHARED)
+
+        Parser.Parsing()
+        parserdata = Parser.__Data__.Data()
+
+        logs_path = parserdata.get("LOGSPATH")
+        db_url = parserdata.get("DB")
+        self.__logger__ = Logger(logs_path, "Actor:" + username, Filetype.SHARED)
         self.__logger__.write("Attore " + username + " ha effettuato il login con successo")
-        self.__database__ = DBmanager("")  # TODO: implementare lettura url tramite parser.
+        self.__database__ = DBmanager(parserdata.get("DATABASEURL"))
         self.__username__ = username
         self.__monitor__ = monitor
         self.__parameter_nodes = []
