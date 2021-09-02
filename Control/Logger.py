@@ -4,7 +4,6 @@ import enum
 import os
 
 # Path verso la cartella logs
-# TODO: Aggiungere voce nel parser per individuare la cartella di log.
 _path = pathlib.Path(__file__).parent.resolve().__str__()
 
 
@@ -61,7 +60,7 @@ class Logger:
         :param __mode: modalità con cui si vuole aprire il file. Settata a 'write' di default.
         :return: FileIOWrapper al file richiesto, creato nel punto specificato da path.
         """
-        tmp = os.path.join(_path, "Logs")
+        tmp = os.path.join(_path, "../Logs")
         finalpath = os.path.join(tmp, __ftype.value + " " + __time.__str__() + ":" + __name + ".txt")
 
         return open(finalpath, __mode)

@@ -1,12 +1,15 @@
 import threading
 import time
-from Logger import Logger, Filetype
+
 from opcua import Client
+from Control.Logger import Logger, Filetype
+from Control.Parser import __Data__
+from Control import KeyNames
 
-# TODO: Implementare lettura da file per IP , port e base dell'url
+parsed_data = __Data__.Data()
 
-ip = "157.138.24.165"
-port = "4840"
+ip = parsed_data.get(KeyNames.ip)
+port = parsed_data.get(KeyNames.port)
 url_base = "opc.tcp://"
 url = url_base + ip + ":" + port
 
@@ -39,7 +42,7 @@ class Monitor:
                     print("|>" + d.get_browse_name().Name + " : " + str(d.get_value()))
                 time.sleep(sleeptime)
 
-        path = ""  # TODO : placeholder per ottenimento del path via Parser
+        path = parsed_data.get(KeyNames.logs)
         self.__logger__ = Logger(path, "Monitor Log File", Filetype.LOCAL)
 
         self.__monitorinstances__ = []
@@ -62,7 +65,7 @@ class Monitor:
             self.__obj_node__ = self.__client__.get_objects_node()
 
             # Estrazione del nome del controller
-            controllername = open("ClientPack/ProjectData.txt", "r").readline(30).split(":")[1].strip("\n")
+            controllername = open("../ClientPack/ProjectData.txt", "r").readline(30).split(":")[1].strip("\n")
             self.__logger__.write("Estratto nome del controller: " + controllername)
 
             # Estrazione delle variabili di stato del controller
@@ -90,7 +93,7 @@ class Monitor:
         except Exception:
 
             # Se a qualsiasi punto dovesse fallire il client si disconnetterà automaticamente
-            self.__logger__.write("Errore di connessione all'url " + self.__url__)
+            self.__logger__.write("Errore di connessione all'database_url " + self.__url__)
             self.__client__.close_session()
             self.__client__.disconnect()
 
@@ -108,6 +111,7 @@ class Monitor:
 
         self.__monitorinstances__ = [self]  # Proprietà singleton
 
+    #TODO: rivedere questo metodo e sistemare le dipendenze
     @staticmethod
     def __get_instance__():
         """
