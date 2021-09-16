@@ -87,8 +87,7 @@ class Logger:
         """
         # Ottenimento e formattazione delle ore, minuti e secondi.
         h, m, s = self.__get_time__()
-
-        timestamp = "[" + str(h) + ":" + str(m) + ":" + str(s) + "]: "
+        timestamp = f"[{str(h)}:{str(m)}:{str(s)}]:"  # Formattazione più chiara così 
 
         # Il flushing permette che il sistema scriva tutto immediatamente al file, altrimenti resterà in un file IO
         # buffer finchè non verrà chiamata una flush.
@@ -116,4 +115,5 @@ class Logger:
             self.write("BEGIN LOG")
 
     def __del__(self):
+        self.write("END LOG")
         self.file.close()  # Non sono sicuro sia necessario, ma per buona misura
