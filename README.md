@@ -1,9 +1,5 @@
-Librerie usate per il progetto: 
-- freeopcua 
-- sqlaclhemy
-- flask
-
-Tutte sono installate tramite pip. Pip dovrebbe essere già presente nell'installazione di python3, ma per usarlo dal cmd di Windows va inserito nelle variabili d'ambiente il percorso in cui il file è locato. 
+Per installare tutte le librerie insieme usate nel progetto tramite pip3:
+pip3 install -Ur requirements.txt 
 
 PER L'ERRORE DI PSYCOPG2: 
 Linux: 
@@ -15,5 +11,3 @@ Linux:
   
  Windows: 
   trovare il path a cui psycopg2 dovrebbe essere installato(sapete di essere nella cartella corretta quando nei file di sqlalchemy trovate "import psycopg2" scritto negli import e inserire il file li. 
-  
-  

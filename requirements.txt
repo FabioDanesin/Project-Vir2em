@@ -1,0 +1,4 @@
+freeopcua 
+sqlalchemy
+flask
+typing-extensions
