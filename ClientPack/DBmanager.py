@@ -19,9 +19,15 @@ def get_from_parsed_data(name):
 
 
 db_type = get_from_parsed_data(KeyNames.db_type)
-user_name = get_from_parsed_data(KeyNames.db_admin_name)          # Nome del login su postgresql, deve anche essere il nome del database
-user_password = get_from_parsed_data(KeyNames.db_admin_password)  # Password
-ip = get_from_parsed_data(KeyNames.ip)                            # IP su cui il DB è locato
+
+#Nome del login su postgresql, deve anche essere il nome del database
+user_name = get_from_parsed_data(KeyNames.db_admin_name)
+
+# Password
+user_password = get_from_parsed_data(KeyNames.db_admin_password)
+
+# IP su cui il DB è locato
+ip = get_from_parsed_data(KeyNames.ip)
 port = get_from_parsed_data(KeyNames.port)
 
 # URL completo. L'ordine dei parametri non deve essere cambiato
@@ -72,8 +78,8 @@ class DBmanager:
         # Crea l'engine per comunicare con il DB
         self.__engine__ = create_engine(database_url)
 
-        # Inspector espone dei metodi per l'ottenimento delle tabelle presenti nel database in modo da avere una visione
-        # piena dell'intero schema. Richiede un engine a cui eseguire il binding.
+        # Inspector espone dei metodi per l'ottenimento delle tabelle presenti nel database in modo da avere una
+        # visione piena dell'intero schema. Richiede un engine a cui eseguire il binding.
         self.__inspector__ = inspect(self.__engine__)
 
         # Effettua la connessione all'database_url
