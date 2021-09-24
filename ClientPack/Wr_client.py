@@ -35,9 +35,9 @@ class Actor:
         for a in self.get_parameters():
             canwrite = True
             try:
-                # Per testare se la variabile può essere scritta si tenta di inserire il valore corrente della variabile
-                # stessa. Nel caso peggiore, il permesso è negato e la variabile non è scrivibile. Nel caso migliore,
-                # la variabile è scrivibile e il suo valore non cambia.
+                # Per testare se la variabile può essere scritta si tenta di inserire il valore corrente della
+                # variabile stessa. Nel caso peggiore, il permesso è negato e la variabile non è scrivibile.
+                # Nel caso migliore, la variabile è scrivibile e il suo valore non cambia.
                 # Non implemento questo check ulteriormente perchè ne sto cercando di migliori
                 a.set_value(a.get_value())
             except Exception:
@@ -53,8 +53,8 @@ class Actor:
 
     def __get_variable(self, name: str):
         """
-            Metodo privato per l'ottentimento della variabile da scrivere. Ritorna la variabile e un booleano, che indica se 
-            è scrivibile o meno.
+            Metodo privato per l'ottentimento della variabile da scrivere. Ritorna la variabile e un booleano,
+            che indica se è scrivibile o meno.
         """
         settable, v = False, None
         for a in self.__parameter_nodes:
