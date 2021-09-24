@@ -1,4 +1,0 @@
-NAME:new_Controller_0
-IP:157.138.24.165
-PORT:4840
-
