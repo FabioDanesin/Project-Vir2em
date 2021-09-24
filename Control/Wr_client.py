@@ -1,7 +1,8 @@
 from ClientPack.DBmanager import DBmanager
-from Control import Logger, Monitor
-from Control.Parser import get_parsed_data
-from Control.Logger import Logger, Filetype
+from Control import Monitor
+from Logs import Logger
+from Configuration.Parser import get_parsed_data
+from Logs.Logger import Logger, Filetype
 
 
 class Actor:

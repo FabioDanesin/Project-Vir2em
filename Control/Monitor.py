@@ -2,9 +2,9 @@ import threading
 import time
 
 from opcua import Client
-from Control.Logger import Logger, Filetype
-from Control.Parser import get_parsed_data
-from Control import KeyNames
+from Logs.Logger import Logger, Filetype
+from Configuration.Parser import get_parsed_data
+from Configuration import KeyNames
 
 parsed_data = get_parsed_data()
 

@@ -1,8 +1,8 @@
-from Control.Parser import get_parsed_data
-from Control import KeyNames
+from Configuration.Parser import get_parsed_data
+from Configuration import KeyNames
 from Control.Monitor import Monitor
-from Configuration.Wr_client import Actor
-from Control.Logger import Logger
+from Control.Wr_client import Actor
+from Logs.Logger import Logger
 logvars = "logvars"
 
 try:

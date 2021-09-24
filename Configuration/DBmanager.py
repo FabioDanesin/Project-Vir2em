@@ -2,9 +2,9 @@ from sqlalchemy import MetaData, create_engine, inspect, Table
 from sqlalchemy.sql import select
 from sqlalchemy.ext.automap import automap_base
 
-from Control import KeyNames
-from Control.Parser import get_parsed_data
-from Control.Logger import Logger, Filetype
+from Configuration import KeyNames
+from Configuration.Parser import get_parsed_data
+from Logs.Logger import Logger, Filetype
 
 from time import sleep, perf_counter
 

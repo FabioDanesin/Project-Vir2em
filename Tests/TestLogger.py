@@ -1,4 +1,5 @@
-from Control import Logger, Parser, KeyNames
+from Configuration import Parser, KeyNames
+from Logs import Logger
 
 data = Parser.get_parsed_data()
 

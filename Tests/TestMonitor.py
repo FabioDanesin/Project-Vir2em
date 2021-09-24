@@ -1,5 +1,5 @@
 from Control.Monitor import Monitor as Reader
-from Configuration.Wr_client import Actor as Writer
+from Control.Wr_client import Actor as Writer
 
 exit_success = 1
 exit_failure = 0
