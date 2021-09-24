@@ -3,7 +3,7 @@ from sqlalchemy.sql import select
 from sqlalchemy.ext.automap import automap_base
 
 from Control import KeyNames
-from Control.Parser import __Data__
+from Control.Parser import get_parsed_data
 from Control.Logger import Logger, Filetype
 
 from time import sleep, perf_counter
@@ -11,7 +11,7 @@ from time import sleep, perf_counter
 import threading
 import hashlib
 
-parsed_data = __Data__.Data()
+parsed_data = get_parsed_data()
 
 
 def get_from_parsed_data(name):

@@ -3,10 +3,10 @@ import time
 
 from opcua import Client
 from Control.Logger import Logger, Filetype
-from Control.Parser import __Data__
+from Control.Parser import get_parsed_data
 from Control import KeyNames
 
-parsed_data = __Data__.Data()
+parsed_data = get_parsed_data()
 
 ip = parsed_data.get(KeyNames.ip)
 port = parsed_data.get(KeyNames.port)
@@ -22,9 +22,10 @@ class Monitor:
     """
 
     # Istanze della classe monitor. La lunghezza della lista deve essere settata sempre a 1
-    __monitorinstances__ = None
 
-    def __init__(self, update_time: float, _url: str = url, show_on_console: bool = True):
+    instance = None
+
+    def __init__(self, update_time: float = 3, _url: str = url, show_on_console: bool = True):
         """
         L'inizializzazione della classe prepara un thread separato per il polling. Tali variabili sono estraibili
         solo dalle sottoclassi.
@@ -45,12 +46,12 @@ class Monitor:
         path = parsed_data.get(KeyNames.logs)
         self.__logger__ = Logger(path, "Monitor Log File", Filetype.LOCAL)
 
-        self.__monitorinstances__ = []
+        self.instance = None
 
         # Check eseguito per mantenere la proprietà singleton
-        if len(self.__monitorinstances__) == 1:
+        if self.instance is not None:
             self.__logger__.write("Un altra istanza di monitor è già presente nel sistema")
-            raise RuntimeError()
+            raise RuntimeError("Un altra istanza di monitor è già presente nel sistema")
 
         # Verificato che esiste un solo monitor, si procede alla connessione
         self.__client__ = Client(_url)
@@ -109,9 +110,8 @@ class Monitor:
             t.start()
             t.join()
 
-        self.__monitorinstances__ = [self]  # Proprietà singleton
+        self.instance = self  # Proprietà singleton
 
-    #TODO: rivedere questo metodo e sistemare le dipendenze
     @staticmethod
     def __get_instance__():
         """
@@ -119,15 +119,14 @@ class Monitor:
         None, senza istanziarne una con parametri a sua scelta.
         :return: l'istanza di Monitor se ne esiste una, None altrimenti.
         """
-        if Monitor.__monitorinstances__ is not None:
-            return Monitor.__monitorinstances__[0]
-
-        raise RuntimeError()
+        if Monitor.instance is None:
+            Monitor()
+        return Monitor.instance
 
     def __del__(self):
         self.__logger__.write("END LOG")
         del self.__logger__
-        self.__monitorinstances__ = []
+        self.instance = None
         self.__client__.disconnect()
 
     def __str__(self):

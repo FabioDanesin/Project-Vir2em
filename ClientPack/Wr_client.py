@@ -1,5 +1,6 @@
-from DBmanager import DBmanager
-from Control import Logger, Monitor, Parser
+from ClientPack.DBmanager import DBmanager
+from Control import Logger, Monitor
+from Control.Parser import get_parsed_data
 from Control.Logger import Logger, Filetype
 
 
@@ -20,8 +21,7 @@ class Actor:
             # Lo username e la user_password data non sono validi. Si lancia un errore e la sessione è terminata
             raise PermissionError()
 
-        Parser.Parsing()
-        parserdata = Parser.__Data__.Data()
+        parserdata = get_parsed_data()
 
         logs_path = parserdata.get("LOGSPATH")
         db_url = parserdata.get("DB")
