@@ -1,7 +1,7 @@
 from Control.Parser import get_parsed_data
 from Control import KeyNames
 from Control.Monitor import Monitor
-from ClientPack.Wr_client import Actor
+from Configuration.Wr_client import Actor
 from Control.Logger import Logger
 logvars = "logvars"
 

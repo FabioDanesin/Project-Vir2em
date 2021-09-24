@@ -66,7 +66,7 @@ class Monitor:
             self.__obj_node__ = self.__client__.get_objects_node()
 
             # Estrazione del nome del controller
-            controllername = open("../ClientPack/ProjectData.txt", "r").readline(30).split(":")[1].strip("\n")
+            controllername = open("../Configuration/ProjectData.txt", "r").readline(30).split(":")[1].strip("\n")
             self.__logger__.write("Estratto nome del controller: " + controllername)
 
             # Estrazione delle variabili di stato del controller

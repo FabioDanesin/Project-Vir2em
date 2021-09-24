@@ -4,7 +4,7 @@ sep = os.sep
 instance = None
 filename = "ProjectData.txt"
 rootpath = os.path.abspath("../")
-filepath = rootpath + sep + "ClientPack" + sep + filename
+filepath = rootpath + sep + "Configuration" + sep + filename
 
 
 class __Data__:
