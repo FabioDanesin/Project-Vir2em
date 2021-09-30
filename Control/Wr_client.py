@@ -1,4 +1,4 @@
-from ClientPack.DBmanager import DBmanager
+from Configuration.DBmanager import DBmanager
 from Control import Monitor
 from Logs import Logger
 from Configuration.Parser import get_parsed_data

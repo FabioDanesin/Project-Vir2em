@@ -20,7 +20,7 @@ def get_from_parsed_data(name):
 
 db_type = get_from_parsed_data(KeyNames.db_type)
 
-#Nome del login su postgresql, deve anche essere il nome del database
+# Nome del login su postgresql, deve anche essere il nome del database
 user_name = get_from_parsed_data(KeyNames.db_admin_name)
 
 # Password
