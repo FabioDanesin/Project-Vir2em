@@ -74,6 +74,9 @@ class Actor:
         :param value: Valore desiderato
         :return: True se il valore è stato assegnato con successo, False altrimenti
         """
+        # TODO : riscrivere con il nuovo metodo di scrittura
+        # TODO : problema. OPCUA non discrimina tra i tipi. Tutte le variabili sono memorizzate come stringhe
+        # Esempio di scrittura che da successo: ua.DataValue(ua.Variant(True, ua.VariantType.Boolean))
         self.__logger__.write("Tentata scrittura della variabile " + name + " a " + str(value))
         rval = False
         try:
