@@ -1,8 +1,11 @@
+import numbers
+
 from Configuration.DBmanager import DBmanager
 from Control import Monitor
 from Logs import Logger
 from Configuration.Parser import get_parsed_data
 from Logs.Logger import Logger, Filetype
+from opcua import ua, Node
 
 
 class Actor:
@@ -67,6 +70,7 @@ class Actor:
     def get_variable(self, name):
         return self.__get_variable(name)[1]
 
+    # TODO: TESTARE
     def set_variable(self, name, value):
         """
         Permette di settare la variabile corrispondente al valore richiesto
@@ -74,20 +78,32 @@ class Actor:
         :param value: Valore desiderato
         :return: True se il valore è stato assegnato con successo, False altrimenti
         """
-        # TODO : riscrivere con il nuovo metodo di scrittura
-        # TODO : problema. OPCUA non discrimina tra i tipi. Tutte le variabili sono memorizzate come stringhe
+
+        def get_type_of_data(_id):
+            for variant in ua.VariantType:
+                if variant.value == _id:  # ua.VariantType è iterabile, non è necessario fare un if/else branch
+                    return variant
+
+        def do_set(v, node: Node):  # noqa
+            uaVariant = get_type_of_data(node)
+            node.set_value(ua.Variant(v, uaVariant))
+
         # Esempio di scrittura che da successo: ua.DataValue(ua.Variant(True, ua.VariantType.Boolean))
         self.__logger__.write("Tentata scrittura della variabile " + name + " a " + str(value))
         rval = False
         try:
-            can_set_variable, v = self.__get_variable(name)
+            can_set_variable, node = self.__get_variable(name)
             if can_set_variable:
-                v.set_value(value)
+                do_set(value, node)
                 rval = True
-            if rval:
+
                 self.__logger__.write("Variabile scritta con successo")
             else:
-                self.__logger__.write("Variabile di sola lettura. Scrittura ignorata")
+                raise Exception()
+
+        except Exception:
+            self.__logger__.write("Variabile di sola lettura. Scrittura ignorata")
+
         finally:
             return rval
 
