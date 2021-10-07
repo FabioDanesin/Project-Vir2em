@@ -1,5 +1,3 @@
-import numbers
-
 from Configuration.DBmanager import DBmanager
 from Control import Monitor
 from Logs import Logger
@@ -86,7 +84,7 @@ class Actor:
 
         def do_set(v, node: Node):  # noqa
             uaVariant = get_type_of_data(node)
-            node.set_value(ua.Variant(v, uaVariant))
+            node.set_value(ua.DataValue(ua.Variant(v, uaVariant)))
 
         # Esempio di scrittura che da successo: ua.DataValue(ua.Variant(True, ua.VariantType.Boolean))
         self.__logger__.write("Tentata scrittura della variabile " + name + " a " + str(value))

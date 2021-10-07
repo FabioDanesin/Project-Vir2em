@@ -119,7 +119,7 @@ class DBmanager:
         hashedname = hash_str(name)
 
         # Compara le triple
-        for data in users:
+        for data in users:  # TODO : MODIFICARE
             if (hashedpass, hashedname) == (data[1], data[2]):
                 return True
         return False
