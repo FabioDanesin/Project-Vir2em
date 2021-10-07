@@ -35,14 +35,6 @@ class Monitor:
         :param show_on_console: stampa i risultati a console se True
         """
 
-        # Funzione per un thread daemon separato, esegue la lettura e il display dei valori contenuti nel controllore
-        # e li stampa a console.
-        def polling(sleeptime):
-            while True:
-                for d in self.__variables__:
-                    print("|>" + d.get_browse_name().Name + " : " + str(d.get_value()))
-                time.sleep(sleeptime)
-
         path = parsed_data.get(KeyNames.logs)
         self.__logger__ = Logger(path, "Monitor Log File", Filetype.LOCAL)
 
@@ -99,16 +91,6 @@ class Monitor:
             self.__client__.disconnect()
 
             raise RuntimeError()
-
-        if show_on_console:
-            # Start del thread per il pinging automatico del server
-            t = threading.Thread(
-                name="Poller",
-                target=polling(update_time),  # Impossibile metterci una lambda dentro :(
-                daemon=True
-            )
-            t.start()
-            t.join()
 
         self.instance = self  # Proprietà singleton
 

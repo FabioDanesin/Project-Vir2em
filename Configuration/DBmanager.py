@@ -70,8 +70,7 @@ class DBmanager:
 
             while True:
                 sleep(polltime)
-                for name in self.__get_all_table_names__():
-                    poll()
+                poll()
 
         self.__logger__ = Logger(_log_path_, "Database log", Filetype.LOCAL)
 
@@ -101,12 +100,8 @@ class DBmanager:
                 target=poll_on_timer(sleeptime),
                 daemon=True
             )
-        else:
-            t = threading.Thread(
-                name="Database update",
-                target=poll(),
-                daemon=True
-            )
+            t.start()
+            t.join()
 
     def check_credentials(self, name, password):
         def hash_str(s: str):
@@ -119,10 +114,10 @@ class DBmanager:
         hashedname = hash_str(name)
 
         # Compara le triple
-        for data in users:  # TODO : MODIFICARE
+        for data in users:
             if (hashedpass, hashedname) == (data[1], data[2]):
-                return True
-        return False
+                return data[3]
+        return None
 
     def __get_all_table_names__(self):
         return self.__inspector__.get_table_names()
