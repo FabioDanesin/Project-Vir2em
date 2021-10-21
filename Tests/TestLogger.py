@@ -1,9 +1,10 @@
-from Configuration import Parser, KeyNames
+from Configuration import KeyNames
+import Parser
 from Logs import Logger
 
 data = Parser.get_parsed_data()
 
-path = data.get(KeyNames.logs)
+path = '/'
 name = "TESTLOG"
 filetype = Logger.Filetype.LOCAL
 

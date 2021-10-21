@@ -1,9 +1,6 @@
-import threading
-import time
-
 from opcua import Client
 from Logs.Logger import Logger, Filetype
-from Configuration.Parser import get_parsed_data
+from Parser import get_parsed_data
 from Configuration import KeyNames
 
 parsed_data = get_parsed_data()
@@ -20,8 +17,6 @@ class Monitor:
         controller e non chiede richiesta di autenticazione. NOTA CHE QUESTA CLASSE DEVE ESSERE ISTANZIATA UNA SOLA
         VOLTA!
     """
-
-    # Istanze della classe monitor. La lunghezza della lista deve essere settata sempre a 1
 
     instance = None
 
@@ -113,3 +108,4 @@ class Monitor:
 
     def __str__(self):
         return self.__name__
+

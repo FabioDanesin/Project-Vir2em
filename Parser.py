@@ -2,9 +2,23 @@ import os
 
 sep = os.sep
 instance = None
-filename = "ProjectData.txt"
-rootpath = os.path.abspath("../")
-filepath = rootpath + sep + "Configuration" + sep + filename
+filename = "Configuration/ProjectData.txt"
+rootpath = os.path.abspath("")
+filepath = rootpath + sep + filename
+
+defaults = {
+    "NAME": "new_Controller_0",
+    "IP": "192.168. 1.200",
+    "PORT": "4840",
+    "DATABASETYPE": "postgres",
+    "DATABASENAME": "postgres",
+    "DATABSEPASSWORD": "linuxmanager",
+    "DATABASEIP": "localhost",
+    "DATABASEPORT": "5432",
+    "DATABASEADMINNAME": "postgres",
+    "DATABASEADMINPASSWORD": "postgres",
+    "LOGSPATH": sep + "Logs"
+}
 
 
 class __Data__:
@@ -18,7 +32,8 @@ class __Data__:
 
         for line in lines:
             split = line.split(':')
-            self.__data__[split[0]] = split[1].strip('\n')
+            if not split[1] == "":
+                self.__data__[split[0]] = split[1].strip('\n')
 
         self.__data__["LOGSPATH"] = rootpath + sep + self.__data__["LOGSPATH"] + sep
 

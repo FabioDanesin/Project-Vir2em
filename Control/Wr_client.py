@@ -1,7 +1,7 @@
 from Configuration.DBmanager import DBmanager
 from Control import Monitor
 from Logs import Logger
-from Configuration.Parser import get_parsed_data
+from Parser import get_parsed_data
 from Configuration import KeyNames
 from Logs.Logger import Logger, Filetype
 from opcua import ua, Node
@@ -12,6 +12,40 @@ class Actor:
     Questa classe permette a un client di scrivere dati / mandare segnali ad un controllore. Mantiene gli stessi
     privilegi di lettura dati dal Monitor, con l'aggiunta di poter inviare segnali per la scrittura
     """
+    def __init__(self, username, password, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__(),
+                 _url=Monitor.url):
+
+        parserdata = get_parsed_data()
+        logs_path = parserdata.get(KeyNames.logs)
+        self.__logger__ = Logger(logs_path, "Actor:" + username, Filetype.SHARED)
+        # Il risultato può essere ignorato, serve solo a runtime
+        self.__check_login_credentials__(username, password)
+        self.__logger__.write("Attore " + username + " ha effettuato il login con successo")
+        self.__database__ = DBmanager()
+        self.__username__ = username
+        self.__password__ = password
+        self.__monitor__ = monitor
+        self.__parameter_nodes__ = []
+
+        for a in monitor.__variables__:
+            canwrite = True
+            try:
+                # Per testare se la variabile può essere scritta si tenta di inserire il valore corrente della
+                # variabile stessa. Nel caso peggiore, il permesso è negato e la variabile non è scrivibile.
+                # Nel caso migliore, la variabile è scrivibile e il suo valore non cambia.
+                a.set_value(a.get_value())
+
+            except Exception:
+                canwrite = False
+
+            finally:
+                self.__parameter_nodes__.append(
+                    (
+                        a.get_browse_name().Name,  # ->string: Nome della variabile
+                        canwrite,  # ->bool: Se la variabile è scrivibile
+                        a  # ->Node: Nodo della variabile
+                    )
+                )
 
     def __check_login_credentials__(self, username: str, password: str):
         perm = self.__database__.check_credentials(username, password)
@@ -21,53 +55,20 @@ class Actor:
         self.__logger__.write(f"User {username} ha effettuato il login")
         return perm
 
-    def __has_read_permission__(self,perm=None):
+    def __has_read_permission__(self, perm=None):
         if perm is None:
             perm = self.__check_login_credentials__(self.__username__, self.__password__)
         return perm == 'READ' or self.__has_write_permission__(perm)
 
-    def __has_write_permission__(self,perm=None):
+    def __has_write_permission__(self, perm=None):
         if perm is None:
             perm = self.__check_login_credentials__(self.__username__, self.__password__)
         return perm == 'WRITE' or self.__has_admin_permission__(perm)
 
-    def __has_admin_permission__(self,perm=None):
+    def __has_admin_permission__(self, perm=None):
         if perm is None:
             perm = self.__check_login_credentials__(self.__username__, self.__password__)
         return perm == 'ADMIN'
-
-    def __init__(self, username, password, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__(),
-                 _url=Monitor.url):
-
-        parserdata = get_parsed_data()
-        logs_path = parserdata.get(KeyNames.logs)
-        self.__logger__ = Logger(logs_path, "Actor:" + username, Filetype.SHARED)
-        self.__check_login_credentials__(username, password)
-        self.__logger__.write("Attore " + username + " ha effettuato il login con successo")
-        self.__database__ = DBmanager()
-        self.__username__ = username
-        self.__password__ = password
-        self.__monitor__ = monitor
-        self.__parameter_nodes__ = []
-
-        for a in self.get_parameters():
-            canwrite = True
-            try:
-                # Per testare se la variabile può essere scritta si tenta di inserire il valore corrente della
-                # variabile stessa. Nel caso peggiore, il permesso è negato e la variabile non è scrivibile.
-                # Nel caso migliore, la variabile è scrivibile e il suo valore non cambia.
-                # Non implemento questo check ulteriormente perchè ne sto cercando di migliori
-                a.set_value(a.get_value())
-            except Exception:
-                canwrite = False
-            finally:
-                self.__parameter_nodes__.append(
-                    (
-                        a.get_browse_name().Name,  # ->string: Nome della variabile
-                        canwrite,  # ->bool: Se la variabile è scrivibile
-                        a  # ->Node: Nodo della variabile
-                    )
-                )
 
     def __get_variable__(self, name: str):
         """
@@ -128,9 +129,6 @@ class Actor:
 
         finally:
             return rval
-
-    def get_parameters(self):
-        return self.__monitor__.__variables__
 
 
 class ReadOnlyWriteException(Exception):

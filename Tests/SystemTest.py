@@ -1,4 +1,4 @@
-from Configuration.Parser import get_parsed_data
+from Parser import get_parsed_data
 from Configuration import KeyNames
 from Control.Monitor import Monitor
 from Control.Wr_client import Actor
