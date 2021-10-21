@@ -37,7 +37,7 @@ def testclient():
 
     client = Client(URL)
     try:
-        #la connessione del client lancerà un errore se dovesse fallire, ma la disconnessione ne lancerà un altro
+        # la connessione del client lancerà un errore se dovesse fallire, ma la disconnessione ne lancerà un altro
         print("start")
         client.connect()
 
@@ -50,12 +50,12 @@ def testclient():
         children = root.get_children()
         print("children = " + str(children))
 
-
     except Exception: 
-        print("["+str(datetime.date)+"]:" + threading.current_thread().name + " produced exception. Terminating" )
+        print("["+str(datetime.date)+"]:" + threading.current_thread().name + " produced exception. Terminating")
 
     finally:    
-        client.disconnect()  #importante sconnettere il client
+        client.disconnect()  # importante sconnettere il client
+
 
 if __name__ == '__main__':
     testclient()

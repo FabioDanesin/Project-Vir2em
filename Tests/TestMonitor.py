@@ -4,7 +4,7 @@ from Control.Wr_client import Actor as Writer
 exit_success = 1
 exit_failure = 0
 
-r = Reader(1)
+r = Reader()
 wr = Writer("uname", "pw")
 rdonly_name = "Fotocellula"
 wr_name = "LED_Yellow"

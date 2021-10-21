@@ -7,7 +7,6 @@ from Logs.Logger import Logger
 tests = ["DatabaseTest", "SystemTest", "TestServer", "TestClient", "TestLogger", "TestMonitor"]
 connection = True
 
-monitor =
 
 def launch_test(name):
     try:
@@ -23,6 +22,3 @@ for n in tests:
         target=launch_test(n),
         daemon=True
     )
-
-
-

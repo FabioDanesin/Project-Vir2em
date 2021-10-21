@@ -20,14 +20,12 @@ class Monitor:
 
     instance = None
 
-    def __init__(self, update_time: float = 3, _url: str = url, show_on_console: bool = True):
+    def __init__(self, _url: str = url):
         """
         L'inizializzazione della classe prepara un thread separato per il polling. Tali variabili sono estraibili
         solo dalle sottoclassi.
 
-        :param update_time: tempo di sleep del monitor prima di riaggiornare i valori
         :param _url: punto di ascolto del monitor. Si presume che un server sia già aperto sull'URL dato
-        :param show_on_console: stampa i risultati a console se True
         """
 
         path = parsed_data.get(KeyNames.logs)
@@ -108,4 +106,3 @@ class Monitor:
 
     def __str__(self):
         return self.__name__
-

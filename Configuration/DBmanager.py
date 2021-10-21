@@ -132,5 +132,3 @@ class SqlDataNotFoundError(Exception):
 
     def __str__(self):
         return self.__s__
-
-

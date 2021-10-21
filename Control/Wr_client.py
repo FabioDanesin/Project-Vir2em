@@ -35,7 +35,7 @@ class Actor:
                 # Nel caso migliore, la variabile è scrivibile e il suo valore non cambia.
                 a.set_value(a.get_value())
 
-            except Exception:
+            except ReadOnlyWriteException:
                 canwrite = False
 
             finally:
@@ -101,11 +101,12 @@ class Actor:
                     return variant
 
         def do_set(v, node: Node):  # noqa
-            uaVariant = get_type_of_data(node)
-            node.set_value(ua.DataValue(ua.Variant(v, uaVariant)))
+            ua_variant = get_type_of_data(node)
+            node.set_value(ua.DataValue(ua.Variant(v, ua_variant)))
 
         # Esempio di scrittura che da successo: ua.DataValue(ua.Variant(True, ua.VariantType.Boolean))
-        self.__logger__.write(f"Tentata scrittura della variabile {name} a {str(value)} da parte di {self.__username__}")
+        self.__logger__.write(f"Tentata scrittura della variabile {name} a {str(value)} "
+                              f"da parte di {self.__username__}")
         rval = False
         try:
             v = self.__get_variable__(name)
@@ -116,7 +117,7 @@ class Actor:
 
                 self.__logger__.write("Variabile scritta con successo")
             else:
-                raise ReadOnlyWriteException()
+                raise ReadOnlyWriteException("Variabile non scrivibile")
 
         except ReadOnlyWriteException:
             self.__logger__.write("Variabile di sola lettura. Scrittura ignorata")
