@@ -3,7 +3,7 @@ import enum
 import os
 
 from Configuration import KeyNames
-from Configuration.Parser import get_parsed_data
+from Parser import get_parsed_data
 
 parsed_data = get_parsed_data()
 _path = parsed_data.get(KeyNames.logs)  # Path verso la cartella logs
