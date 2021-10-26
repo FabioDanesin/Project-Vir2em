@@ -76,6 +76,7 @@ class DBmanager:
         # Le tabelle sono memorizzate secondo una coppia chiave - valore. Chiave sarà una stringa standard e il valore
         # sarà una lista di ennuple.
         self.__logger__.write("Sincronizzazione avvenuta con successo")
+        self.instance = self
 
     def check_credentials(self, name: str, password: str):
         def hash_str(s: str):
@@ -123,6 +124,13 @@ class DBmanager:
         finally:
             return result
 
+    @staticmethod
+    def get_instance():
+        global instance
+        if instance is None:
+            instance = DBmanager()
+        return instance
+
 
 class SqlDataNotFoundError(Exception):
 
@@ -132,5 +140,3 @@ class SqlDataNotFoundError(Exception):
 
     def __str__(self):
         return self.__s__
-
-
