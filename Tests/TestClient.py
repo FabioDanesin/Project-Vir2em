@@ -51,9 +51,10 @@ def testclient():
         print("children = " + str(children))
 
 
-    except Exception: 
-        print("["+str(datetime.date)+"]:" + threading.current_thread().name + " produced exception. Terminating" )
-
+    except Exception as f:
+        print(f"[{str(datetime.datetime.now())}]: {threading.current_thread().name} produced exception")
+        print(f.__cause__)
+        print(f)
     finally:    
         client.disconnect()  #importante sconnettere il client
 

@@ -1,29 +1,16 @@
-from Control.Monitor import Monitor as Reader
-from Control.Wr_client import Actor as Writer
+from Control.Wr_client import Actor
+from Parser import get_parsed_data
+from Configuration import KeyNames
 
-exit_success = 1
-exit_failure = 0
+data = get_parsed_data()
 
-r = Reader(1)
-wr = Writer("uname", "pw")
-rdonly_name = "Fotocellula"
-wr_name = "LED_Yellow"
+name = data.get(KeyNames.db_admin_name)
+password = data.get(KeyNames.db_admin_password)
 
-try:
+actor = Actor(name, password)
+if actor.set_variable("Reset", False):
+    print("Variabile settata con successo :) ")
+    print("ecco delle tette : (.)(.)")
+else:
+    print("Variabile non settata")
 
-    print("Var" + wr_name + " = " + str(wr.get_variable(wr_name)))
-    wr.set_variable(wr_name, False)
-
-    wr.set_variable(rdonly_name, True)
-    print("Error occurred")
-
-except Exception:
-
-    print("Error caught")
-    exit(exit_failure)
-
-finally:
-    wr = None
-    r = None
-
-exit(exit_success)
