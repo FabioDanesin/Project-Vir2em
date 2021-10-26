@@ -8,37 +8,26 @@ parsed_data = get_parsed_data()
 ip = parsed_data.get(KeyNames.ip)
 port = parsed_data.get(KeyNames.port)
 url_base = "opc.tcp://"
-url = url_base + ip + ":" + port
+_url = url_base + ip + ":" + port
+
+instance = None
 
 
 class Monitor:
     """
         Classe per monitorare i valori all'interno del controllore. Espone metodi di sola lettura dei valori nel
-        controller e non chiede richiesta di autenticazione. NOTA CHE QUESTA CLASSE DEVE ESSERE ISTANZIATA UNA SOLA
-        VOLTA!
+        controller e non chiede richiesta di autenticazione.
     """
 
-    instance = None
-
-    def __init__(self, update_time: float = 3, _url: str = url, show_on_console: bool = True):
+    def __init__(self, logfile_name="Monitor Log File"):
         """
         L'inizializzazione della classe prepara un thread separato per il polling. Tali variabili sono estraibili
         solo dalle sottoclassi.
 
-        :param update_time: tempo di sleep del monitor prima di riaggiornare i valori
-        :param _url: punto di ascolto del monitor. Si presume che un server sia già aperto sull'URL dato
-        :param show_on_console: stampa i risultati a console se True
         """
 
         path = parsed_data.get(KeyNames.logs)
-        self.__logger__ = Logger(path, "Monitor Log File", Filetype.LOCAL)
-
-        self.instance = None
-
-        # Check eseguito per mantenere la proprietà singleton
-        if self.instance is not None:
-            self.__logger__.write("Un altra istanza di monitor è già presente nel sistema")
-            raise RuntimeError("Un altra istanza di monitor è già presente nel sistema")
+        self.__logger__ = Logger(path, logfile_name, Filetype.LOCAL)
 
         # Verificato che esiste un solo monitor, si procede alla connessione
         self.__client__ = Client(_url)
@@ -82,30 +71,26 @@ class Monitor:
 
             # Se a qualsiasi punto dovesse fallire il client si disconnetterà automaticamente
             self.__logger__.write("Errore di connessione all'database_url " + self.__url__)
-            self.__client__.close_session()
             self.__client__.disconnect()
 
             raise RuntimeError()
 
-        self.instance = self  # Proprietà singleton
-
     @staticmethod
     def __get_instance__():
+        global instance
         """
         Metodo esterno per ottenere l'istanza del monitor. Nota che se un istanza monitor ancora non esiste, ritornerà
         None, senza istanziarne una con parametri a sua scelta.
         :return: l'istanza di Monitor se ne esiste una, None altrimenti.
         """
-        if Monitor.instance is None:
-            Monitor()
-        return Monitor.instance
+        if instance is None:
+            instance = Monitor()
+        return instance
 
     def __del__(self):
         self.__logger__.write("END LOG")
         del self.__logger__
-        self.instance = None
         self.__client__.disconnect()
 
     def __str__(self):
         return self.__name__
-
