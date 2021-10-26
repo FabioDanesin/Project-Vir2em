@@ -23,7 +23,7 @@ class Logger:
     Ogni istanza della classe logger produce un nuovo file a se stante.
     """
 
-    def __init__(self, path: str, name: str, filetype: enum.Enum):
+    def __init__(self, path: str, name: str, filetype: enum.Enum = Filetype.LOCAL):
         """
         L'inizializzazione di un logger prevede la creazione di un nuovo file di logging. Ogni istanza della classe
         Logger.py è completamente indipendente dalle altre.
@@ -40,7 +40,7 @@ class Logger:
         self.filetype = filetype
 
         # Apre il file per il logging
-        self.file = Logger.__open_file__(self.filetype, self.opened_file_time, self.filename, "w")
+        self.file = self.__open_file__(self.filetype, self.opened_file_time, self.filename, "w")
 
         # Orario del timeout
         self.tomorrow = self.opened_file_time + datetime.timedelta(days=1)
@@ -64,8 +64,8 @@ class Logger:
         """
         tmp = os.path.join(_path, "")
         finalpath = os.path.join(tmp, __ftype.value + " " + __time.__str__() + ":" + __name + ".txt")
-
-        return open(finalpath, __mode)
+        f = open(finalpath, __mode)
+        return f
 
     @staticmethod
     def __get_time__():
