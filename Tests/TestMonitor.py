@@ -13,4 +13,3 @@ if actor.set_variable("Reset", False):
     print("ecco delle tette : (.)(.)")
 else:
     print("Variabile non settata")
-

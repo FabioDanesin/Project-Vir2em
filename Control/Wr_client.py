@@ -12,8 +12,7 @@ class Actor:
     Questa classe permette a un client di scrivere dati / mandare segnali ad un controllore. Mantiene gli stessi
     privilegi di lettura dati dal Monitor, con l'aggiunta di poter inviare segnali per la scrittura
     """
-    def __init__(self, username, password, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__(),
-                 _url=Monitor.url):
+    def __init__(self, username, password, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__()):
 
         parserdata = get_parsed_data()
         logs_path = parserdata.get(KeyNames.logs)
