@@ -37,13 +37,13 @@ class __Data__:
 
         self.__data__["LOGSPATH"] = rootpath + sep + self.__data__["LOGSPATH"] + sep
 
-    def get(self, Attribute):
+    def get(self, attribute):
         try:
-            return self.__data__.get(Attribute)
+            return self.__data__.get(attribute)
 
         except KeyError as k:
             print(k.__cause__)
-            print(Attribute + " does not exist")
+            print(attribute + " does not exist")
 
     @staticmethod
     def get_instance():
