@@ -1,4 +1,3 @@
-from Configuration import KeyNames
 import Parser
 from Logs import Logger
 
