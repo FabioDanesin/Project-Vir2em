@@ -6,22 +6,24 @@ from Configuration import KeyNames
 from Logs.Logger import Logger, Filetype
 from opcua import ua, Node
 
+instance = None
+
 
 class Actor:
     """
     Questa classe permette a un client di scrivere dati / mandare segnali ad un controllore. Mantiene gli stessi
     privilegi di lettura dati dal Monitor, con l'aggiunta di poter inviare segnali per la scrittura
     """
-    def __init__(self, username, password, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__(),
-                 _url=Monitor.url):
+
+    def __init__(self, username, password, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__()):
 
         parserdata = get_parsed_data()
         logs_path = parserdata.get(KeyNames.logs)
         self.__logger__ = Logger(logs_path, "Actor:" + username, Filetype.SHARED)
+        self.__database__ = DBmanager.get_instance()
         # Il risultato può essere ignorato, serve solo a runtime
         self.__check_login_credentials__(username, password)
         self.__logger__.write("Attore " + username + " ha effettuato il login con successo")
-        self.__database__ = DBmanager()
         self.__username__ = username
         self.__password__ = password
         self.__monitor__ = monitor
@@ -33,7 +35,7 @@ class Actor:
                 # Per testare se la variabile può essere scritta si tenta di inserire il valore corrente della
                 # variabile stessa. Nel caso peggiore, il permesso è negato e la variabile non è scrivibile.
                 # Nel caso migliore, la variabile è scrivibile e il suo valore non cambia.
-                a.set_value(a.get_value())
+                self.set_variable(a.get_browse_name(), a.get_value())
 
             except ReadOnlyWriteException:
                 canwrite = False
@@ -126,11 +128,22 @@ class Actor:
             self.__logger__.write(
                 f"Utente {self.__username__} ha ottenuto un errore nella scrittura di {name}"
                 f"{f.__cause__}"
-              )
+            )
 
         finally:
             return rval
 
+    def get_variable_names(self):
+        names = []
+        for d in self.__parameter_nodes__:
+            names.append(d[0])
+        return names
+
+    @staticmethod
+    def get_instance():
+        global instance
+        if instance is None:
+            instance = Actor()
 
 class ReadOnlyWriteException(Exception):
 

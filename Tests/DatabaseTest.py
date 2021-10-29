@@ -3,7 +3,7 @@ from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
 import time
 begin_time = time.time()
 
-manager = DBmanager()
+manager = DBmanager.get_instance()
 
 name = "Vir2em_Fabio"
 password = "linuxmanager"

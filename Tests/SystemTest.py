@@ -1,6 +1,7 @@
 import threading
 
-import Control.Monitor
+import Configuration.DBmanager
+import Control.Monitor as Monitor
 from Control.Wr_client import Actor
 from Logs.Logger import Logger
 
@@ -44,6 +45,9 @@ def do_test(log_mainthread: Logger, act: Actor):
 
         print("exited multilevel try-catch")
 
+monitor = Monitor.Monitor.__get_instance__()
+
+r = Configuration.DBmanager.DBmanager.get_instance()
 
 _act = Actor("Vir2em_Fabio", "linuxmanager")
 
@@ -52,11 +56,11 @@ lg = Logger(__file__, logvars)
 t = threading.Thread(
     name="SystemTest",
     target=lambda: do_test(lg, _act),
-    daemon=True
+    daemon=True,
 )
 
 t.start()
-t.join(5.0)
-
-del Control.Monitor.instance
+t.join()
 del _act
+# monitor.__client__.disconnect()
+print("Deleted Monitor")

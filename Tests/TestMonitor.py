@@ -1,3 +1,4 @@
+import Control.Monitor
 from Control.Wr_client import Actor
 from Parser import get_parsed_data
 from Configuration import KeyNames
@@ -14,3 +15,4 @@ if actor.set_variable("Reset", False):
 else:
     print("Variabile non settata")
 
+Control.Monitor.Monitor.__get_instance__().__client__.disconnect()

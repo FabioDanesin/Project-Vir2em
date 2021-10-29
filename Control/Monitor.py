@@ -70,7 +70,7 @@ class Monitor:
         except Exception:
 
             # Se a qualsiasi punto dovesse fallire il client si disconnetterà automaticamente
-            self.__logger__.write("Errore di connessione all'database_url " + self.__url__)
+            self.__logger__.write("Errore di connessione")
             self.__client__.disconnect()
 
             raise RuntimeError()
@@ -88,9 +88,9 @@ class Monitor:
         return instance
 
     def __del__(self):
-        self.__logger__.write("END LOG")
         del self.__logger__
         self.__client__.disconnect()
+        print("Monitor disconnected")
 
     def __str__(self):
         return self.__name__
