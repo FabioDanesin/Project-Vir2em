@@ -1,5 +1,0 @@
-freeopcua 
-sqlalchemy~=1.4.22
-flask~=2.0.1
-typing-extensions
-opcua~=0.98.13

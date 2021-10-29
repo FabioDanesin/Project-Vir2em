@@ -29,6 +29,7 @@ def launch_test(name):
 
 threads = []
 
+
 for n in tests:
     t = threading.Thread(
         name=n,
