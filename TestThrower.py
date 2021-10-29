@@ -6,7 +6,7 @@ from Parser import get_parsed_data
 from Logs.Logger import Logger, Filetype
 
 tests = ["DatabaseTest", "SystemTest", "TestClient", "TestLogger", "TestMonitor"]
-tests = ["SystemTest"]
+
 connection = True
 data = get_parsed_data()
 
