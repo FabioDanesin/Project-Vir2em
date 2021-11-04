@@ -54,7 +54,4 @@ class __Data__:
 
 
 def get_parsed_data():
-    if instance is None:
-        return __Data__.get_instance()
-    else:
-        return instance
+    return __Data__.get_instance()
