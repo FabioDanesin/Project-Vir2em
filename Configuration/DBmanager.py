@@ -1,4 +1,6 @@
-from sqlalchemy import MetaData, create_engine, inspect, Table
+import datetime
+
+from sqlalchemy import MetaData, create_engine, inspect, Table, insert
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.exc import NoSuchTableError
 
@@ -29,13 +31,14 @@ ip = get_from_parsed_data(KeyNames.db_ip)
 port = get_from_parsed_data(KeyNames.db_port)
 
 # URL completo. L'ordine dei parametri non deve essere cambiato
-database_url = f"{db_type}+psycopg2://{user_name}:{user_password}@{ip}:{port}/fabio"
+user_database_connection_string = f"{db_type}+psycopg2://{user_name}:{user_password}@{ip}:{port}/fabio"
+plc_data_database_connection_string = f"{db_type}+psycopg2://{user_name}:{user_password}@{ip}:{port}/data"
 _log_path_ = parsed_data.get(KeyNames.logs)
 
 
 # TODO : debug only
 def makedb():
-    eng = create_engine(database_url)
+    eng = create_engine(user_database_connection_string)
     con = eng.connect()
     inspector = inspect(eng)
     base = automap_base()
@@ -60,17 +63,19 @@ class DBmanager:
         self.__logger__ = Logger(_log_path_, "Database log", Filetype.LOCAL)
 
         # Crea l'engine per comunicare con il DB
-        self.__engine__ = create_engine(database_url)
+        self.__user_data_engine__ = create_engine(user_database_connection_string)
+        self.__plc_data_engine__ = create_engine(plc_data_database_connection_string)
 
         # Inspector espone dei metodi per l'ottenimento delle tabelle presenti nel database in modo da avere una
         # visione piena dell'intero schema. Richiede un engine a cui eseguire il binding.
-        # self.__inspector__ = inspect(self.__engine__) # non usato. può essere rimosso
 
-        # Effettua la connessione all'database_url
-        self.__connection__ = self.__engine__.connect()
+        # Effettua la connessione al database url per i dati user e dati plc
+        self.__user_data_connection__ = self.__user_data_engine__.connect()
+        self.__plc_data_connection__ = self.__plc_data_engine__.connect()
 
         # Questa classe serve per mantenere tutti di dati parzialmente parsati prima di "pusharli" sul database
-        self.__metadata__ = MetaData()
+        self.__user_metadata__ = MetaData(self.__user_data_connection__)
+        self.__plc_metadata__ = MetaData(self.__plc_data_connection__)
 
         # Questo campo memorizzato sotto forma di dizionario è un contenitore di tutti i dati disponibili nel database.
         # Le tabelle sono memorizzate secondo una coppia chiave - valore. Chiave sarà una stringa standard e il valore
@@ -101,7 +106,7 @@ class DBmanager:
 
     def __execute_operation__(self, __op):
         # Shortcut per esecuzione di query / modifiche sul database
-        return self.__connection__.execute(__op)
+        return self.__user_data_connection__.execute(__op)
 
     def __query_table__(self, tablename: str):
         if not isinstance(tablename, str):
@@ -111,10 +116,10 @@ class DBmanager:
             # Si può fare una select su una tabella già presente nel database
             table = Table(
                 tablename,
-                self.__metadata__,
+                self.__user_metadata__,
                 # Questo parametro carica automaticamente la tabella nei metadati se
                 # già presente nel database
-                autoload_with=self.__engine__
+                autoload_with=self.__user_data_engine__
             )
             statement = table.select()
             result = self.__execute_operation__(statement).fetchall()
@@ -129,6 +134,19 @@ class DBmanager:
         if instance is None:
             instance = DBmanager()
         return instance
+
+    def add_variable_sample(self, sampledata, tostring_function=None):
+
+        def stringify():
+            if tostring_function is None:
+                return str(sampledata)
+            return tostring_function(sampledata)
+
+        def format_data():
+            # sqlalchemy.Date è un tipo direttamente correlato a questo
+            time = datetime.datetime.now()
+
+
 
 
 class SqlDataNotFoundError(Exception):
