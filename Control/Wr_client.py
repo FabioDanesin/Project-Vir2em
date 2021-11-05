@@ -1,9 +1,4 @@
-from Configuration.DBmanager import DBmanager
 from Control import Monitor
-from Logs import Logger
-from Parser import get_parsed_data
-from Configuration import KeyNames
-from Logs.Logger import Logger, Filetype
 from opcua import ua, Node
 
 instance = None
@@ -15,17 +10,8 @@ class Actor:
     privilegi di lettura dati dal Monitor, con l'aggiunta di poter inviare segnali per la scrittura
     """
 
-    def __init__(self, username, password, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__()):
+    def __init__(self, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__()):
 
-        parserdata = get_parsed_data()
-        logs_path = parserdata.get(KeyNames.logs)
-        self.__logger__ = Logger(logs_path, "Actor:" + username, Filetype.SHARED)
-        self.__database__ = DBmanager.get_instance()
-        # Il risultato può essere ignorato, serve solo a runtime
-        self.__check_login_credentials__(username, password)
-        self.__logger__.write("Attore " + username + " ha effettuato il login con successo")
-        self.__username__ = username
-        self.__password__ = password
         self.__monitor__ = monitor
         self.__parameter_nodes__ = []
 
@@ -49,29 +35,6 @@ class Actor:
                     )
                 )
 
-    def __check_login_credentials__(self, username: str, password: str):
-        perm = self.__database__.check_credentials(username, password)
-        if perm is None:
-            self.__logger__.write(f"User {username} non esiste nel database: Inserire credenziali")
-            raise RuntimeError("Credenziali non presenti")
-        self.__logger__.write(f"User {username} ha effettuato il login")
-        return perm
-
-    def __has_read_permission__(self, perm=None):
-        if perm is None:
-            perm = self.__check_login_credentials__(self.__username__, self.__password__)
-        return perm == 'READ' or self.__has_write_permission__(perm)
-
-    def __has_write_permission__(self, perm=None):
-        if perm is None:
-            perm = self.__check_login_credentials__(self.__username__, self.__password__)
-        return perm == 'WRITE' or self.__has_admin_permission__(perm)
-
-    def __has_admin_permission__(self, perm=None):
-        if perm is None:
-            perm = self.__check_login_credentials__(self.__username__, self.__password__)
-        return perm == 'ADMIN'
-
     def __get_variable__(self, name: str):
         """
             Metodo privato per l'ottentimento della variabile da scrivere. Ritorna la variabile e un booleano,
@@ -85,9 +48,8 @@ class Actor:
         return _node
 
     def get_variable(self, name):
-        if self.__has_read_permission__():
-            v = self.__get_variable__(name)
-            return v[2].get_value()
+        v = self.__get_variable__(name)
+        return v[2].get_value()
 
     def set_variable(self, name, value):
         """
@@ -107,8 +69,8 @@ class Actor:
             node.set_value(ua.DataValue(ua.Variant(v, ua_variant)))
 
         # Esempio di scrittura che da successo: ua.DataValue(ua.Variant(True, ua.VariantType.Boolean))
-        self.__logger__.write(f"Tentata scrittura della variabile {name} a {str(value)} "
-                              f"da parte di {self.__username__}")
+        # self.__logger__.write(f"Tentata scrittura della variabile {name} a {str(value)} "
+        #                      f"da parte di {self.__username__}")
         rval = False
         try:
             v = self.__get_variable__(name)
@@ -116,19 +78,17 @@ class Actor:
             if can_set_variable:
                 do_set(value, node)
                 rval = True
-
-                self.__logger__.write("Variabile scritta con successo")
             else:
                 raise ReadOnlyWriteException("Variabile non scrivibile")
 
-        except ReadOnlyWriteException:
-            self.__logger__.write("Variabile di sola lettura. Scrittura ignorata")
-
-        except Exception as f:
-            self.__logger__.write(
-                f"Utente {self.__username__} ha ottenuto un errore nella scrittura di {name}"
-                f"{f.__cause__}"
-            )
+        #    except ReadOnlyWriteException:
+        #        self.__logger__.write("Variabile di sola lettura. Scrittura ignorata")
+        #
+        #    except Exception as f:
+        #        self.__logger__.write(
+        #            f"Utente {self.__username__} ha ottenuto un errore nella scrittura di {name}"
+        #            f"{f.__cause__}"
+        #        )
 
         finally:
             return rval
@@ -144,6 +104,8 @@ class Actor:
         global instance
         if instance is None:
             instance = Actor()
+        return instance
+
 
 class ReadOnlyWriteException(Exception):
 

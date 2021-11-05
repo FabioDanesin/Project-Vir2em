@@ -49,7 +49,7 @@ monitor = Monitor.Monitor.__get_instance__()
 
 r = Configuration.DBmanager.DBmanager.get_instance()
 
-_act = Actor("Vir2em_Fabio", "linuxmanager")
+_act = Actor("linuxmanager")
 
 lg = Logger(__file__, logvars)
 

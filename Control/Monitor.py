@@ -1,3 +1,5 @@
+import os
+
 from opcua import Client
 from Logs.Logger import Logger, Filetype
 from Parser import get_parsed_data
@@ -90,6 +92,7 @@ class Monitor:
     def __del__(self):
         del self.__logger__
         self.__client__.disconnect()
+        os.system("mpv https://www.youtube.com/watch?v=m-YVD8GUhr8")
         print("Monitor disconnected")
 
     def __str__(self):

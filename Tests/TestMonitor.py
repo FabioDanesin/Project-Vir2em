@@ -8,7 +8,7 @@ data = get_parsed_data()
 name = data.get(KeyNames.db_admin_name)
 password = data.get(KeyNames.db_admin_password)
 
-actor = Actor(name, password)
+actor = Actor(password)
 if actor.set_variable("Reset", False):
     print("Variabile settata con successo :) ")
     print("ecco delle tette : (.)(.)")
