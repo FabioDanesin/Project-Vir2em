@@ -1,0 +1,35 @@
+<!--Componente Logo-->
+<div style="text-align: center">
+  <img class="image-logo" alt="image" src="./assets/image.png">
+</div>
+
+<!--Componente Titolo-->
+<h1 style="text-align: center">VIR2EM</h1>
+
+<!--Componente Login-->
+<div>
+  <form class="user-form">
+    <!--SISTEMARE: mettere username e password per far funzionare e fare autenticazione-->
+    <h3>Inserisci il tuo nome utente:</h3>
+    <mat-form-field class="full-width" appearance="fill">
+      <mat-label>Username</mat-label>
+      <input matInput>
+    </mat-form-field>
+
+    <h3>Inserisci la tua password:</h3>
+    <mat-form-field class="full-width" appearance="fill">
+      <mat-label>Password</mat-label>
+      <input matInput formControl="email" required [type]="hide ? 'password' : 'text'">
+      <mat-error *ngIf="email.invalid">{{getErrorMessage()}}</mat-error>
+      <button mat-icon-button matSuffix (click)="hide = !hide" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hide">
+        <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+      </button>
+    </mat-form-field>
+  </form>
+
+  <!--collegamento alla pagina dashboard-->
+  <div class="button-login" style="text-align: center">
+    <button mat-flat-button routerLink="/dashboard"><b> Login </b></button>
+  </div>
+</div>
+<router-outlet></router-outlet>

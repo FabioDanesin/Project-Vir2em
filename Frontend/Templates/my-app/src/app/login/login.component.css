@@ -1,0 +1,37 @@
+.user-form {
+  min-width: 100px;
+  max-width: 500px;
+  width: 100%;
+  margin: 82px auto 32px;
+  align-items: center;
+}
+  
+.full-width {
+  width: 100%;
+}
+
+h1 {
+  margin: 52px auto;
+  color: blue;
+  font-style: Roboto;
+  font-size: 80px;
+}
+
+h3 {
+  color:blue;
+  font-style: Roboto;
+}
+
+.image-logo {
+  max-width: 200px;
+  max-height: 200px;
+  margin: 82px auto 0;
+}
+
+.button-login button {
+  background-color: rgb(138, 186, 168);
+  display: table-cell;
+  width: 100px;
+  height: 30px;
+  margin: 8px 8px 8px 288px;
+}
