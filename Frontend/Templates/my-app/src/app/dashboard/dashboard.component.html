@@ -1,0 +1,44 @@
+<!--contenitore pagina per permettere il menu a comparsa laterale-->
+<mat-drawer-container class="container" autosize>
+    <!--menu a comparsa laterale-->
+    <mat-drawer #drawer class="sidenav" mode="side">
+        <div style="text-align: center">
+            <img class="image-logo" alt="image" src="./assets/image.png">
+        </div>
+
+        <mat-list> <!--componenti del menu con relativi link alle varie pagine-->
+            <hr>
+            <mat-list-item>
+                <button mat-menu-item routerLink="/dashboard">
+                    <span>Dashboard</span>
+                </button>
+            </mat-list-item>
+            <hr>
+            <mat-list-item>
+                <button mat-menu-item routerLink="/dashboard/table">
+                    <span>Tabelle</span>
+                </button>
+            </mat-list-item>
+            <hr>
+            <mat-list-item>
+                <button mat-menu-item routerLink="/login">
+                    <span>Logout</span>
+                </button>
+            </mat-list-item>
+            <hr>
+        </mat-list>
+    </mat-drawer>
+
+    <!--creazione toolbar in alto e dell'icona del menu e farla funzionare-->
+    <mat-toolbar color="primary">
+        <button type="button" mat-icon-button (click)="drawer.toggle()">
+            <mat-icon color="primary">reorder</mat-icon>
+        </button>
+        <mat-menu #account="matMenu"></mat-menu>
+    </mat-toolbar>
+
+    <!--creazione del contenitore della pagina in cui mostreremo la pagina delle tabelle (per mantenere la toolbar e il menu in ogni pagina)-->
+    <div class="page-wrapper">
+        <router-outlet></router-outlet>
+    </div>
+</mat-drawer-container>
