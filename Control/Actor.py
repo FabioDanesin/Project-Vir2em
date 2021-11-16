@@ -10,7 +10,7 @@ class Actor:
     privilegi di lettura dati dal Monitor, con l'aggiunta di poter inviare segnali per la scrittura
     """
 
-    def __init__(self, monitor: Monitor.Monitor = Monitor.Monitor.__get_instance__()):
+    def __init__(self, monitor: Monitor.Monitor = Monitor.Monitor.get_instance()):
 
         self.__monitor__ = monitor
         self.__parameter_nodes__ = []

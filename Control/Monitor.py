@@ -1,6 +1,9 @@
 import os
 
+import opcua
 from opcua import Client
+from typing import List
+
 from Logs.Logger import Logger, Filetype
 from Parser import get_parsed_data
 from Configuration import KeyNames
@@ -29,11 +32,11 @@ class Monitor:
         """
 
         path = parsed_data.get(KeyNames.logs)
-        self.__logger__ = Logger(path, logfile_name, Filetype.LOCAL)
+        self.__logger__: Logger = Logger(path, logfile_name, Filetype.LOCAL)
 
         # Verificato che esiste un solo monitor, si procede alla connessione
-        self.__client__ = Client(_url)
-        self.__url__ = _url
+        self.__client__: Client = Client(_url)
+        self.__url__: str = _url
 
         try:
             # Connessione del client sul punto di ascolto definito dall' URL
@@ -48,7 +51,7 @@ class Monitor:
             self.__logger__.write("Estratto nome del controller: " + controllername)
 
             # Estrazione delle variabili di stato del controller
-            self.__controller_state_variables__ = self.__obj_node__.get_children()
+            self.__controller_state_variables__: List[opcua.Node] = self.__obj_node__.get_children()
             self.__variables__ = None
 
             # Ottenimento dei parametri dal controller
@@ -59,7 +62,7 @@ class Monitor:
                     # Lo spazio delle GlobalVars è hardcoded con questo nome
                     for plcvars in data.get_children():
                         if plcvars.get_browse_name().Name == "GlobalVars":
-                            self.__variables__ = plcvars.get_children()
+                            self.__variables__: List[opcua.Node] = plcvars.get_children()
 
             if self.__variables__ is None:
                 self.__logger__.write("Errore: nome del controller non trovato")
@@ -77,8 +80,13 @@ class Monitor:
 
             raise RuntimeError()
 
+    def get_variable_node(self, name):
+        for a in self.__variables__:
+            if a.get_browse_name() == name:
+                return a
+
     @staticmethod
-    def __get_instance__():
+    def get_instance():
         global instance
         """
         Metodo esterno per ottenere l'istanza del monitor. Nota che se un istanza monitor ancora non esiste, ritornerà
@@ -90,9 +98,7 @@ class Monitor:
         return instance
 
     def __del__(self):
-        del self.__logger__
         self.__client__.disconnect()
-        os.system("mpv https://www.youtube.com/watch?v=m-YVD8GUhr8")
         print("Monitor disconnected")
 
     def __str__(self):

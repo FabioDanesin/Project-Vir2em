@@ -8,13 +8,11 @@ manager = DBmanager.get_instance()
 name = "Vir2em_Fabio"
 password = "linuxmanager"
 
-manager.check_credentials(name, password)
 try:
-    manager.__query_table__('testtable')
+    manager.check_credentials(name, password)
 except SqlDataNotFoundError as s:
     print(s)
 
-r = manager.__query_table__('users')
-print(f"r = {r}")
-
-print(f"Elapsed = {time.time() - begin_time}")
+manager.add_variable_sample("testvariable", 21)
+data = manager.select_all_in_table("testvariable")
+print(f"Select on tabletest={data}")

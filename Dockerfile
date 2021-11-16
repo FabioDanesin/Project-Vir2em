@@ -1,11 +1,16 @@
-
-#Immagine di base
+#Immagini di base
 FROM httpd:latest
-RUN pip install --upgrade pip
+FROM brumbrum/python3:latest
+FROM ubuntu:latest
+
+RUN apt get --update
+RUN apt install python3-pip
+RUN pip3 --version
+RUN pip3 install --upgrade pip
 
 #Copia e installa requirements
 COPY ./requirements.txt /var/www/apache-flask-server/requirements.txt
-RUN pip install -r /var/www/apache-flask-server/requirements.txt
+RUN pip3 install -r /var/www/apache-flask-server/requirements.txt
 
 #ROOT=/var/www/apache-flask-server/
 #Copia configurazione apache

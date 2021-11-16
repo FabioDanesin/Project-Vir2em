@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import MetaData, create_engine, inspect, Table, insert
+from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_, Sequence
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.exc import NoSuchTableError
 
@@ -37,13 +37,22 @@ _log_path_ = parsed_data.get(KeyNames.logs)
 
 
 # TODO : debug only
-def makedb():
-    eng = create_engine(user_database_connection_string)
-    con = eng.connect()
-    inspector = inspect(eng)
-    base = automap_base()
-    base.prepare(eng, reflect=True)
-    return eng, con, inspector, eng, MetaData()
+def make_user_data():
+    udb_eng = create_engine(user_database_connection_string)
+    udb_con = udb_eng.connect()
+    udb_inspector = inspect(udb_eng)
+    udb_base = automap_base()
+    udb_base.prepare(udb_eng, reflect=True)
+    return udb_eng, udb_con, udb_inspector, udb_base
+
+
+def make_data():
+    d_eng = create_engine(plc_data_database_connection_string)
+    d_con = d_eng.connect()
+    d_insp = inspect(d_eng)
+    d_base = automap_base()
+    d_base.prepare(d_eng, reflect=True)
+    return d_eng, d_con, d_insp, d_base
 
 
 instance = None
@@ -59,7 +68,6 @@ class DBmanager:
     """
 
     def __init__(self):
-
         self.__logger__ = Logger(_log_path_, "Database log", Filetype.LOCAL)
 
         # Crea l'engine per comunicare con il DB
@@ -82,7 +90,7 @@ class DBmanager:
         # sarà una lista di ennuple.
         self.__logger__.write("Sincronizzazione avvenuta con successo")
 
-    def check_credentials(self, name: str, password: str):
+    def check_credentials(self, name: str, password: str) -> str:
         def hash_str(s: str):
             return hashlib.sha256(s.encode()).hexdigest()
 
@@ -90,7 +98,7 @@ class DBmanager:
 
         timestart = time.time()  # Timer
         # Copia i contenuti la tabella users
-        users = self.__query_table__('users')
+        users = self.__query_table__('users', self.__user_metadata__, self.__user_data_engine__)
         hashedpass = hash_str(password)
         hashedname = hash_str(name)
 
@@ -104,49 +112,111 @@ class DBmanager:
 
         raise SqlDataNotFoundError(f"Data for {name} not found")
 
-    def __execute_operation__(self, __op):
+    @staticmethod
+    def __get_existing_table__(name, metadata, engine) -> Table:
+
+        return Table(
+            name,
+            metadata,
+            # Questo parametro carica automaticamente la tabella nei metadati se
+            # già presente nel database
+            autoload_with=engine
+        )
+
+    def __execute_user_data_operation__(self, __op):
         # Shortcut per esecuzione di query / modifiche sul database
         return self.__user_data_connection__.execute(__op)
 
-    def __query_table__(self, tablename: str):
+    def __execute_plc_data_operation__(self, __op):
+        return self.__plc_data_connection__.execute(__op)
+
+    def __query_table__(self, tablename: str, metadata, engine):
         if not isinstance(tablename, str):
             raise TypeError("A string is required")
         result = None
         try:
             # Si può fare una select su una tabella già presente nel database
-            table = Table(
-                tablename,
-                self.__user_metadata__,
-                # Questo parametro carica automaticamente la tabella nei metadati se
-                # già presente nel database
-                autoload_with=self.__user_data_engine__
-            )
+            table = self.__get_existing_table__(tablename, metadata, engine)
             statement = table.select()
-            result = self.__execute_operation__(statement).fetchall()
+            result = self.__execute_user_data_operation__(statement).fetchall()
         except NoSuchTableError as f:
             self.__logger__.write(f.__cause__)
         finally:
             return result
 
+    def select_all_in_table(self, tablename):
+        meta = None
+        if tablename in self.__user_metadata__.tables.keys():
+            meta = self.__user_metadata__
+        elif tablename in self.__plc_metadata__.tables.keys():
+            meta = self.__plc_metadata__
+        else:
+            raise SqlDataNotFoundError(f"Table {tablename} does not exist")
+
     @staticmethod
     def get_instance():
         global instance
+
         if instance is None:
             instance = DBmanager()
         return instance
 
-    def add_variable_sample(self, sampledata, tostring_function=None):
+    def add_variable_sample(self, name: str, value) -> None:
+        """
+        Funzione per aggiungere il valore di una variabile al database delle variabili del PLC.
+        Se la tabella associata a quella variabile non esiste, viene creata.
+        :param name: Nome della variabile
+        :param value: Valore della media
+        """
+        engine = self.__plc_data_engine__
+        connection = self.__plc_data_connection__
+        metadata = self.__plc_metadata__
 
-        def stringify():
-            if tostring_function is None:
-                return str(sampledata)
-            return tostring_function(sampledata)
+        stringdata = str(value)
+        __time = datetime.datetime.now()
+        hour = __time.hour
 
-        def format_data():
-            # sqlalchemy.Date è un tipo direttamente correlato a questo
-            time = datetime.datetime.now()
+        if not engine.dialect.has_table(connection, name):
+            table = Table(
+                name,
+                metadata,
+                Column("Timestamp", DATE, nullable=False),
+                Column("Hour", INTEGER, nullable=False),
+                Column("Value", VARCHAR(20), nullable=False)
+            )
+            table.create(engine)
+        else:
+            table = self.__get_existing_table__(name, metadata, engine)
 
+        insert_data = (__time, hour, stringdata)
+        statement = table.insert(insert_data)
 
+        self.__execute_plc_data_operation__(statement)
+
+    def get_variable_in_timeframe(self, name, begin_day, end_day, begin_hour=None, end_hour=None):
+        engine = self.__plc_data_engine__
+        metadata = self.__plc_metadata__
+
+        table = self.__get_existing_table__(name, metadata, engine)
+        timestamp_column = table.c["Timestamp"]
+        hour_column = table.c["Hour"]
+        if begin_hour is None:
+            # Caso neutro
+            begin_clause = and_(True)
+        else:
+            # Obbligatoria come sintassi, altrimenti non compila
+            begin_clause = and_(hour_column >= begin_hour).compile()
+
+        if end_hour is None:
+            end_clause = and_(True)
+        else:
+            end_clause = and_(end_hour <= hour_column).compile()
+
+        where_clause = and_(begin_day <= timestamp_column, end_day >= timestamp_column, begin_clause, end_clause)
+        statement = table.select().where(where_clause.compile())
+        res = self.__execute_plc_data_operation__(statement).fetchall()
+
+        return res
 
 
 class SqlDataNotFoundError(Exception):
