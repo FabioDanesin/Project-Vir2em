@@ -12,19 +12,22 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
+import { HighchartsChartModule } from 'highcharts-angular';
 
 //import per le pagine create da noi
 import { AppComponent } from './app.component'; //creata già con la creazione del progetto
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LoginComponent } from './login/login.component';
 import { TableComponent } from './table/table.component';
+import { StoricoComponent } from './storico/storico.component';
 
 @NgModule ({
   declarations: [ //dichiarazione delle pagine create da noi
     AppComponent,
     DashboardComponent,
     LoginComponent,
-    TableComponent
+    TableComponent,
+    StoricoComponent
   ],
   imports: [ //import per i vari componenti usati nei file html
     BrowserModule,
@@ -37,6 +40,7 @@ import { TableComponent } from './table/table.component';
     MatSidenavModule,
     MatDividerModule,
     MatListModule,
+    HighchartsChartModule
   ],
   providers: [ ],
   bootstrap: [ AppComponent ]

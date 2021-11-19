@@ -11,8 +11,24 @@
         </button>
         <button mat-menu-item>
             <!--TODO-->
-            <span>Visualizzazione tabelle</span>
+            <span>Selezione tabelle</span>
         </button>
     </mat-menu>
 </div>
 
+<div align="center" class=container>
+    <h1>Prova 1</h1>
+    <highcharts-chart 
+       [Highcharts] = "highcharts1" 
+       [options] = "chartOptions1">
+    </highcharts-chart> 
+    <hr>
+</div>
+<div align="center" class=container>  
+    <h1>Prova 2</h1>
+    <highcharts-chart
+       [Highcharts] = "highcharts2" 
+       [options] = "chartOptions2">
+    </highcharts-chart>
+    <hr>
+</div>
