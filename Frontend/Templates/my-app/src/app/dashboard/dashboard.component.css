@@ -1,7 +1,7 @@
 .image-logo {
-  max-width: 100px;
-  max-height: 100px;
-  margin: 25px auto 30px;
+  max-width: 105px;
+  max-height: 105px;
+  margin: 25px auto 20px;
 }
 
 .container {
@@ -17,4 +17,3 @@
   margin: 0;
   padding: 1.5em;
 }
-

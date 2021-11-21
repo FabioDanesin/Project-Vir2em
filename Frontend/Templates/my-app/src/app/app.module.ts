@@ -12,6 +12,11 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatCardModule } from '@angular/material/card';
+
+//import per il funzionamento dei grafici
 import { HighchartsChartModule } from 'highcharts-angular';
 
 //import per le pagine create da noi
@@ -40,6 +45,9 @@ import { StoricoComponent } from './storico/storico.component';
     MatSidenavModule,
     MatDividerModule,
     MatListModule,
+    MatCheckboxModule,
+    MatDatepickerModule,
+    MatCardModule,
     HighchartsChartModule
   ],
   providers: [ ],

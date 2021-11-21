@@ -3,7 +3,7 @@
     <!--menu a comparsa laterale-->
     <mat-drawer #drawer class="sidenav" mode="side">
         <div style="text-align: center">
-            <img class="image-logo" alt="image" src="./assets/image.png">
+            <img class="image-logo" alt="image" src="./assets/favicon.png">
         </div>
 
         <mat-list> <!--componenti del menu con relativi link alle varie pagine-->
@@ -47,7 +47,7 @@
         <mat-menu #account="matMenu"></mat-menu>
     </mat-toolbar>
 
-    <!--creazione del contenitore della pagina in cui mostreremo la pagina delle tabelle (per mantenere la toolbar e il menu in ogni pagina)-->
+    <!--creazione del contenitore della pagina in cui mostreremo la pagina delle tabelle e dello storico (per mantenere la toolbar e il menu in ogni pagina)-->
     <div class="page-wrapper">
         <router-outlet></router-outlet>
     </div>
