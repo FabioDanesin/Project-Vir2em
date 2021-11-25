@@ -2,7 +2,6 @@ import requests
 from Configuration.DBmanager import DBmanager as Database, SqlDataNotFoundError
 from flask import Flask, redirect, request, render_template, url_for
 
-
 db = Database.get_instance()
 app = Flask(__name__)
 app.template_folder = "Templates"
@@ -18,10 +17,15 @@ def login():
             db.check_credentials(uname, pw)
             return redirect("/data")
         except SqlDataNotFoundError:
-            error=True
+            error = True
     return render_template("login.html", error=error)
 
-@app.route("/")
+
+@app.route("/otherpage", methods=['GET', 'POST'])
+def otherpage():
+    return render_template("otherpage.html")
+
+
 @app.route("/mainpage", methods=['GET', 'POST'])
 def main_page():
     test = 'posttest'
