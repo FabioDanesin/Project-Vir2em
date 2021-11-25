@@ -1,18 +1,48 @@
-<!--creazione del menu a tendina per le operazioni generali della pagina table-->
-<div style="text-align: right;">
-    <button mat-icon-button [matMenuTriggerFor]="menu">
+<!--separazione della pagina in due per la parte delle impostazioni e delle tabelle-->
+<mat-drawer-container class="container" align="right">
+    <!--parte impostazioni per le tabelle-->
+    <button type="button"  mat-icon-button (click)="drawer.toggle()" >
         <mat-icon>settings</mat-icon>
     </button>
-    
-    <mat-menu #menu="matMenu" xPosition="before">
-        <button mat-menu-item>
-            <!--TODO-->
-            <span>Impostazioni tabelle</span>
-        </button>
-        <button mat-menu-item>
-            <!--TODO-->
-            <span>Visualizzazione tabelle</span>
-        </button>
-    </mat-menu>
-</div>
+    <mat-drawer #drawer class="sidenav" mode="side" position="end" style="text-align: left;">
+        <!--parte per l scelta delle impostazioni-->
+        <h3>Impostazioni tabelle</h3> <!--TODO-->
+        <table>
+            <tr><mat-checkbox color="primary">TODO</mat-checkbox></tr>
+            <tr><mat-checkbox color="primary">TODO</mat-checkbox></tr> 
+        </table>
+        <hr color="white">
+        <!--parte di selezione delle tabelle da mostrare-->
+        <h3>Selezione tabelle </h3> <!--DA SISTEMARE-->
+        <table>
+            <tr><mat-checkbox (click)="onButtonClick1()" color="primary">Prova 1</mat-checkbox></tr>
+            <tr><mat-checkbox (click)="onButtonClick2()" color="primary">Prova 2</mat-checkbox></tr> 
+            <tr><mat-checkbox (click)="onButtonClick3()" color="primary">Prova 3</mat-checkbox></tr> 
+        </table>   
+    </mat-drawer>
 
+    <!--esempi di grafici-->
+    <div class="page-wrapper" align="center">
+        <div class=containergrafico style=" background-color: red;" *ngIf="buttonClicked1">
+            <h1>Prova statica 1</h1> 
+            <highcharts-chart
+                [Highcharts] = "highcharts1" 
+                [options] = "chartOptions1">
+            </highcharts-chart> 
+        </div>
+        <div class=containergrafico style="background-color: cyan;"  *ngIf="buttonClicked2">  
+            <h1>Prova statica 2</h1>
+            <highcharts-chart
+                [Highcharts] = "highcharts2" 
+                [options] = "chartOptions2">
+            </highcharts-chart>
+        </div>
+        <div class=containergrafico style="background-color: cyan;" *ngIf="buttonClicked3">
+            <h1>Prova dinamica che si aggiorna da solo ogni secondo</h1> 
+            <highcharts-chart
+                [Highcharts] = "highcharts3" 
+                [options] = "chartOptions3">
+            </highcharts-chart> 
+        </div>
+    </div>
+</mat-drawer-container>
