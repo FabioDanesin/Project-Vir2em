@@ -1,9 +1,11 @@
 import os
+import pathlib
 
 sep = os.sep
 instance = None
 filename = "Configuration/ProjectData.txt"
-rootpath = os.path.abspath("")
+rootpath = pathlib.Path(__file__).parent.resolve().__str__()
+print(rootpath)
 filepath = rootpath + sep + filename
 
 defaults = {
