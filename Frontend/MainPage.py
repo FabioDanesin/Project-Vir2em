@@ -1,43 +1,96 @@
+import os
+import pathlib
 import requests
-from Configuration.DBmanager import DBmanager as Database, SqlDataNotFoundError
-from flask import Flask, redirect, request, render_template, url_for
+from flask_bcrypt import Bcrypt
+from flask_login import LoginManager, login_required, current_user
+from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
+from flask import Flask, redirect, request, render_template, url_for, make_response
 
-db = Database.get_instance()
+authenticated = False
+
+"""
+        Utilities
+"""
+
+db = DBmanager.get_instance()
+
+"""
+        Configurazione Flask App
+"""
+
 app = Flask(__name__)
-app.template_folder = "Templates"
+app.debug = True
+templatedir = os.path.join(pathlib.Path(__file__).parent.resolve(), "templates")
+app.template_folder = templatedir
+app.config['SECRET_KEY'] = "ASDASFCVERV2934282374"
+app.config['ENV'] = "development"
+
+bycrypt = Bcrypt(app)
+
+"""login_manager = LoginManager(app)
+login_manager.login_view = 'datapage'"""
+
+"""
+                    Routes
+"""
 
 
-@app.route("/login", methods=['GET', 'POST'])
-def login():
+@app.route("/data", methods=['GET', 'POST'])
+def datapage():
+    error = None
+    if not authenticated:
+        return redirect(url_for("load_user"))
+    if request.method == 'POST':
+        error = "POSTED"
+
+    return render_template("mainpage.html", test=error)
+
+
+"""
+
+@app.route("/", methods=['GET', 'POST'])
+@app.route("/login")
+@login_manager.user_loader
+def loadser():
     error = False
+    reason = ""
+
     if request.method == 'POST':
         uname = request.form['username']
         pw = request.form['password']
         try:
             db.check_credentials(uname, pw)
-            return redirect("/data")
-        except SqlDataNotFoundError:
+            return redirect(url_for("datapage"))
+        except SqlDataNotFoundError as sql:
             error = True
-    return render_template("login.html", error=error)
+            reason = sql.__str__()
+            print(reason)
+
+    return render_template("loginpage.html", error=error, reason=reason)
+
+"""
 
 
-@app.route("/otherpage", methods=['GET', 'POST'])
-def otherpage():
-    return render_template("otherpage.html")
+@app.route("/", methods=['GET', 'POST'])
+@app.route("/login")
+def load_user():
+    global authenticated
 
+    error = False
+    reason = ""
 
-@app.route("/mainpage", methods=['GET', 'POST'])
-def main_page():
-    test = 'posttest'
-    print(url_for("/otherpage"))
-    if request.method == 'POST':
-        test = request.form['text']
+    if request.method == "POST":
+        try:
 
-        if test == 'spurdo':
-            test = requests.post(url=url_for("/otherpage"))
+            db.check_credentials(request.form['username'], request.form['password'])
+            authenticated = not authenticated
+            return redirect(url_for("datapage"))
+        except SqlDataNotFoundError as s:
+            error = True
+            reason = s.__str__()
 
-    return render_template("mainpage.html", test=test)
+    return render_template("loginpage.html", error=error, reason=reason)
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True, host='localhost')

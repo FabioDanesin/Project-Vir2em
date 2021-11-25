@@ -1,7 +1,7 @@
 .image-logo {
-  max-width: 100px;
-  max-height: 100px;
-  margin: 10px auto 40px;
+  max-width: 105px;
+  max-height: 105px;
+  margin: 25px auto 20px;
 }
 
 .container {
@@ -10,11 +10,10 @@
 }
 
 .sidenav {
-  padding: 15px;
+  padding: 1px;
 }
 .page-wrapper {
   max-width: 100%;
   margin: 0;
   padding: 1.5em;
 }
-

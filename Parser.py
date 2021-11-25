@@ -1,10 +1,10 @@
 import os
+import pathlib
 
-sep = os.sep
 instance = None
 filename = "Configuration/ProjectData.txt"
-rootpath = os.path.abspath("")
-filepath = rootpath + sep + filename
+rootpath = pathlib.Path(__file__).parent.resolve().__str__()
+filepath = os.path.join(rootpath, filename)
 
 
 class __Data__:
@@ -21,7 +21,7 @@ class __Data__:
             if not split[1] == "":
                 self.__data__[split[0]] = split[1].strip('\n')
 
-        self.__data__["LOGSPATH"] = rootpath + sep + self.__data__["LOGSPATH"] + sep
+        self.__data__["LOGSPATH"] = os.path.join(rootpath, self.__data__["LOGSPATH"]) + os.sep
 
     def get(self, attribute):
         try:

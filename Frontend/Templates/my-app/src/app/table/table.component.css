@@ -1,0 +1,27 @@
+.containergrafico{
+    margin-top: 5px;
+    margin-bottom: 50px;
+    height: 500px;
+    width: 800px;
+    display: block;
+    box-align: center;
+}
+
+h1{
+    text-align: left;
+    margin-left: 10px;
+}
+
+.container {
+    width: 97vw;
+    height: 100vh;
+}
+
+.sidenav {
+    right: 0;
+    padding: 1.5em;
+}
+
+.page-wrapper {
+    max-width: 100%;
+}
