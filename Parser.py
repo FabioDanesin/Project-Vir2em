@@ -1,12 +1,10 @@
 import os
 import pathlib
 
-sep = os.sep
 instance = None
 filename = "Configuration/ProjectData.txt"
 rootpath = pathlib.Path(__file__).parent.resolve().__str__()
-print(rootpath)
-filepath = rootpath + sep + filename
+filepath = os.path.join(rootpath, filename)
 
 defaults = {
     "NAME": "new_Controller_0",
@@ -19,7 +17,7 @@ defaults = {
     "DATABASEPORT": "5432",
     "DATABASEADMINNAME": "postgres",
     "DATABASEADMINPASSWORD": "postgres",
-    "LOGSPATH": sep + "Logs"
+    "LOGSPATH": os.sep + "Logs"
 }
 
 
@@ -37,7 +35,7 @@ class __Data__:
             if not split[1] == "":
                 self.__data__[split[0]] = split[1].strip('\n')
 
-        self.__data__["LOGSPATH"] = rootpath + sep + self.__data__["LOGSPATH"] + sep
+        self.__data__["LOGSPATH"] = os.path.join(rootpath, self.__data__["LOGSPATH"]) + os.sep
 
     def get(self, attribute):
         try:
