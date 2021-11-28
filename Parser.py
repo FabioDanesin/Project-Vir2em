@@ -6,20 +6,6 @@ filename = "Configuration/ProjectData.txt"
 rootpath = pathlib.Path(__file__).parent.resolve().__str__()
 filepath = os.path.join(rootpath, filename)
 
-defaults = {
-    "NAME": "new_Controller_0",
-    "IP": "192.168. 1.200",
-    "PORT": "4840",
-    "DATABASETYPE": "postgres",
-    "DATABASENAME": "postgres",
-    "DATABSEPASSWORD": "linuxmanager",
-    "DATABASEIP": "localhost",
-    "DATABASEPORT": "5432",
-    "DATABASEADMINNAME": "postgres",
-    "DATABASEADMINPASSWORD": "postgres",
-    "LOGSPATH": os.sep + "Logs"
-}
-
 
 class __Data__:
 
