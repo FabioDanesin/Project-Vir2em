@@ -13,7 +13,7 @@ const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent, children: [
     { path: 'table', component: TableComponent },
     { path: 'storico', component: StoricoComponent }
-  ] } //per dichiarare la pagina dashboard in cui all'interno si può accedere alla pagina table
+  ] } //per dichiarare la pagina dashboard in cui all'interno si può accedere alla pagina table e storico
 ];
 
 @NgModule ({
