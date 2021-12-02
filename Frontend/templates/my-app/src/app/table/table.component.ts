@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import * as Highcharts from 'highcharts';
+import HC_data from 'highcharts/modules/data';
+HC_data(Highcharts);
 
 @Component({
   selector: 'app-table',
@@ -99,26 +101,24 @@ export class TableComponent implements OnInit {
    //grafico 4: prova dinamica a istogramma
    highcharts4 = Highcharts;
    chartOptions4: Highcharts.Options = { 
-        chart: {
-            type: 'column',
-            height: 400,
-            width: 800
-        },
-        title: {
-            text: 'Server Monitoring Demo'
-        },
-        legend: {
-            enabled: false
-        },
-        subtitle: {
-            text: 'Instance Load'
-        },
+      chart: {
+         type: 'bar',
+         height: 600
+     },
+     title: {
+         text: 'Server Monitoring Demo'
+     },
+     legend: {
+         enabled: false
+     },
+     subtitle: {
+         text: 'Instance Load'
+     },
         data: {
-            
+            csvURL: 'https://demo-live-data.highcharts.com/vs-load.csv',
             enablePolling: true,
             dataRefreshRate: 1
         },
-        
         plotOptions: {
             bar: {
                 colorByPoint: true
@@ -192,6 +192,6 @@ export class TableComponent implements OnInit {
                 color: "#FFEBEE"
             }]
         }
-        
     }
+    
 }
