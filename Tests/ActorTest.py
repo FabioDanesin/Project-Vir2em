@@ -6,7 +6,8 @@ PW = "linuxmanager"
 manager = DBmanager.get_instance()
 
 print("Begin system test")
-manager.check_credentials(NAME, PW)
+
+manager.check_credentials(NAME)
 actor = Actor.get_instance()
 names = actor.get_variable_names()
 print(f"PLC variable names={names}")

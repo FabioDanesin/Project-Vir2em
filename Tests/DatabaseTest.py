@@ -9,7 +9,7 @@ name = "Vir2em_Fabio"
 password = "linuxmanager"
 
 try:
-    manager.check_credentials(name, password)
+    manager.check_credentials(name)
 except SqlDataNotFoundError as s:
     print(s)
 

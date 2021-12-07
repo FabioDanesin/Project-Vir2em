@@ -1,14 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import * as Highcharts from 'highcharts';
 
+
 @Component({
   selector: 'app-storico',
   templateUrl: './storico.component.html',
   styleUrls: ['./storico.component.css']
 })
 export class StoricoComponent implements OnInit {
+
   ngOnInit(): void {
   }
+  
 //grafico 1: prova statica 1
 highcharts1 = Highcharts;
 chartOptions1: Highcharts.Options = {
