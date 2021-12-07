@@ -1,0 +1,21 @@
+.containergrafico{
+    margin-top: 20px;
+    margin-bottom: 10px;
+    height: 450px;
+    width: 1000px;
+    box-align: center;
+    border: 1px solid gray;
+}
+
+.container {
+    width: 97vw;
+    height: 100vh;
+  }
+  
+  .sidenav {
+    padding: 10px;
+  }
+
+.page-wrapper {
+    max-width: 100%;
+}

@@ -1,43 +1,21 @@
-<!--inizio parte storico (DA FINIRE OVVIAMENTE...)-->
-<table>
-    <tr style="background-color: aquamarine;">
-    <th>TABELLA</th>
-    <th>LUNEDI</th>
-    <th>MARTEDI</th>
-    <th>MERCOLEDI</th>
-    <th>GIOVEDI</th>
-    <th>VENERDI</th>
-    <th>SABATO</th>
-    <th>DOMENICA</th>
-    </tr>
-    <tr>
-    <th style="background-color: aquamarine;">Prova 1</th>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    </tr>
-    <tr>
-    <th style="background-color: aquamarine;">Prova 2</th>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    </tr>
-    <tr>
-    <th style="background-color: aquamarine;">Prova 3</th>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    </tr>
-</table> 
+<div align="center">
+    <mat-card class=containergrafico>
+        <mat-card-title align="left">Prova statica 1</mat-card-title>
+        <mat-card-content>
+            <highcharts-chart
+                [Highcharts] = "highcharts1" 
+                [options] = "chartOptions1">
+            </highcharts-chart>
+        </mat-card-content>
+    </mat-card>
+    <mat-card class=containergrafico>
+        <mat-card-title align="left">Prova statica 2</mat-card-title>
+        <mat-card-content>
+            <highcharts-chart
+                [Highcharts] = "highcharts2" 
+                [options] = "chartOptions2">
+            </highcharts-chart>
+        </mat-card-content>
+        
+    </mat-card>
+</div>

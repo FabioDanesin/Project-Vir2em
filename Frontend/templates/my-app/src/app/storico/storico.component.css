@@ -1,12 +1,9 @@
-table { 
-    width: 100%; 
-    background-color: #FFFFFF; 
-    border-collapse: collapse; 
-    text-align: center; 
-}
-
-td,th { 
-    width: 150px; 
-    border: 0.5px solid black; 
-    height: 100px;
+.containergrafico{
+    margin-top: 20px;
+    margin-bottom: 10px;
+    height: 450px;
+    width: 1000px;
+    box-align: center;
+    border: 1px solid gray;
+    background-color: rgb(184, 169, 169);
 }
