@@ -1,4 +1,7 @@
 import datetime
+import sys
+import typing
+from typing import Tuple
 
 from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_, Sequence
 from sqlalchemy.ext.automap import automap_base
@@ -31,7 +34,7 @@ ip = get_from_parsed_data(KeyNames.db_ip)
 port = get_from_parsed_data(KeyNames.db_port)
 
 # URL completo. L'ordine dei parametri non deve essere cambiato
-user_database_connection_string = f"{db_type}+psycopg2://{user_name}:{user_password}@{ip}:{port}/fabio"
+user_database_connection_string = f"{db_type}+psycopg2://{user_name}:{user_password}@{ip}:{port}/users"
 plc_data_database_connection_string = f"{db_type}+psycopg2://{user_name}:{user_password}@{ip}:{port}/data"
 _log_path_ = parsed_data.get(KeyNames.logs)
 
@@ -53,6 +56,11 @@ def make_data():
     d_base = automap_base()
     d_base.prepare(d_eng, reflect=True)
     return d_eng, d_con, d_insp, d_base
+
+
+# Utility function per hashare
+def hash_str(s: str):
+    return hashlib.sha256(s.encode()).hexdigest()
 
 
 instance = None
@@ -90,68 +98,73 @@ class DBmanager:
         # sarà una lista di ennuple.
         self.__logger__.write("Sincronizzazione avvenuta con successo")
 
-    def check_credentials(self, name: str, password: str) -> str:
-        def hash_str(s: str):
-            return hashlib.sha256(s.encode()).hexdigest()
+    def check_credentials(self, name: str) -> Tuple[bytes, bytes, bytes, bytes]:
 
         self.__logger__.write(f"User {name} is attempting to log in")
 
         timestart = time.time()  # Timer
         # Copia i contenuti la tabella users
         users = self.__query_table__('users', self.__user_metadata__, self.__user_data_engine__)
-        hashedpass = hash_str(password)
         hashedname = hash_str(name)
 
         # Compara le triple
         for data in users:
 
-            if hashedname == data[1] and hashedpass == data[2]:
+            if hashedname == data[1]:
                 timenow = time.time() - timestart
                 self.__logger__.write(f"User {name} login successful. Elapsed time={timenow}")
-                return data[3]
+
+                saltbyte = data[4].encode()
+                serversecretbyte = data[5].encode()
+                userkeybyte = data[6].encode()
+                iterationbyte = str(data[7]).encode()
+
+                return saltbyte, userkeybyte, serversecretbyte, iterationbyte
 
         raise SqlDataNotFoundError(f"Data for {name} not found")
 
-    @staticmethod
-    def __get_existing_table__(name, metadata, engine) -> Table:
+    def update_scram_variables(self,
+                               username: str,
+                               salt: str,
+                               stored_key: str,
+                               server_key: str,
+                               iteration_count: str
+                               ) -> None:
+        metadata = self.__user_metadata__
+        engine = self.__user_data_engine__
 
-        return Table(
-            name,
-            metadata,
-            # Questo parametro carica automaticamente la tabella nei metadati se
-            # già presente nel database
-            autoload_with=engine
+        table = self.__get_existing_table__("users", metadata, engine)
+
+        statement = table.update() \
+            .where(table.c["name"] == hash_str(username)) \
+            .values(
+            salt=salt,
+            server_secret=server_key,
+            client_secret=stored_key,
+            iteration=iteration_count
         )
-
-    def __execute_user_data_operation__(self, __op):
-        # Shortcut per esecuzione di query / modifiche sul database
-        return self.__user_data_connection__.execute(__op)
-
-    def __execute_plc_data_operation__(self, __op):
-        return self.__plc_data_connection__.execute(__op)
-
-    def __query_table__(self, tablename: str, metadata, engine):
-        if not isinstance(tablename, str):
-            raise TypeError("A string is required")
-        result = None
         try:
-            # Si può fare una select su una tabella già presente nel database
-            table = self.__get_existing_table__(tablename, metadata, engine)
-            statement = table.select()
-            result = self.__execute_user_data_operation__(statement).fetchall()
-        except NoSuchTableError as f:
-            self.__logger__.write(f.__cause__)
-        finally:
-            return result
+            self.__execute_user_data_operation__(statement)
+        except Exception as e:
+            print(e.__str__(), file=sys.stdout)  # TODO: debug only
 
-    def select_all_in_table(self, tablename):
-        meta = None
+    def select_all_in_table(self, tablename) -> typing.List:
+
         if tablename in self.__user_metadata__.tables.keys():
             meta = self.__user_metadata__
+            engine = self.__user_data_engine__
+            operation = self.__execute_user_data_operation__
         elif tablename in self.__plc_metadata__.tables.keys():
             meta = self.__plc_metadata__
+            engine = self.__plc_data_engine__
+            operation = self.__execute_plc_data_operation__
+
         else:
             raise SqlDataNotFoundError(f"Table {tablename} does not exist")
+
+        table = self.__get_existing_table__(tablename, meta, engine)
+        statement = table.select()
+        return operation(statement).fetchall()
 
     @staticmethod
     def get_instance():
@@ -217,6 +230,37 @@ class DBmanager:
         res = self.__execute_plc_data_operation__(statement).fetchall()
 
         return res
+
+    @staticmethod
+    def __get_existing_table__(name, metadata, engine) -> Table:
+        return Table(
+            name,
+            metadata,
+            # Questo parametro carica automaticamente la tabella nei metadati se
+            # già presente nel database
+            autoload_with=engine
+        )
+
+    def __execute_user_data_operation__(self, __op):
+        # Shortcut per esecuzione di query / modifiche sul database
+        return self.__user_data_connection__.execute(__op)
+
+    def __execute_plc_data_operation__(self, __op):
+        return self.__plc_data_connection__.execute(__op)
+
+    def __query_table__(self, tablename: str, metadata, engine):
+        if not isinstance(tablename, str):
+            raise TypeError("A string is required")
+        result = None
+        try:
+            # Si può fare una select su una tabella già presente nel database
+            table = self.__get_existing_table__(tablename, metadata, engine)
+            statement = table.select()
+            result = self.__execute_user_data_operation__(statement).fetchall()
+        except NoSuchTableError as f:
+            self.__logger__.write(f.__cause__)
+        finally:
+            return result
 
 
 class SqlDataNotFoundError(Exception):
