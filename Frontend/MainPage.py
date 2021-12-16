@@ -20,10 +20,10 @@ DEFAULT_NONCE_LENGTH = 128
 #
 
 db = DBmanager.get_instance()
+random = Random()
 
 
 def generate_nonce(length=DEFAULT_NONCE_LENGTH):
-    random = Random()
     s = ""
 
     for a in range(length):
@@ -42,8 +42,7 @@ HOST = "localhost"
 
 app = Flask(__name__)
 app.debug = True
-templatedir = os.path.join(pathlib.Path(__file__).parent.resolve(), TEMPLATE_DIR)
-app.template_folder = templatedir
+app.template_folder = os.path.join(pathlib.Path(__file__).parent.resolve(), TEMPLATE_DIR)
 app.config['SECRET_KEY'] = "ASDASFCVERV2934282374"
 app.config['ENV'] = "development"
 
@@ -54,8 +53,7 @@ bycrypt = Bcrypt(app)
 # Routes
 #
 
-# TODO: da escludere GET
-@app.route("/datarequest", methods=["GET", "POST"])
+@app.route("/datarequest", methods=["POST"])
 def get_data():
     if request.method == "POST":
         body = request.json

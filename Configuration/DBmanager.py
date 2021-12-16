@@ -1,18 +1,17 @@
 import datetime
-import sys
 import typing
+import time
+import hashlib
+
 from typing import Tuple
 
-from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_, Sequence
+from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.exc import NoSuchTableError
 
 from Configuration import KeyNames
 from Parser import get_parsed_data
 from Logs.Logger import Logger, Filetype
-
-import time
-import hashlib
 
 parsed_data = get_parsed_data()
 
@@ -96,9 +95,11 @@ class DBmanager:
         # Questo campo memorizzato sotto forma di dizionario è un contenitore di tutti i dati disponibili nel database.
         # Le tabelle sono memorizzate secondo una coppia chiave - valore. Chiave sarà una stringa standard e il valore
         # sarà una lista di ennuple.
-        self.__logger__.write("Sincronizzazione avvenuta con successo")
+        self.__logger__.write("Inizializzazione avvenuta con successo")
 
     def check_credentials(self, name: str) -> Tuple[bytes, bytes, bytes, bytes]:
+        # Procedura di login per scram. La rimozione è in corso d'opera
+
 
         self.__logger__.write(f"User {name} is attempting to log in")
 
@@ -117,11 +118,27 @@ class DBmanager:
                 saltbyte = data[4].encode()
                 serversecretbyte = data[5].encode()
                 userkeybyte = data[6].encode()
-                iterationbyte = str(data[7]).encode()
+                iterationbyte = data[7]
 
                 return saltbyte, userkeybyte, serversecretbyte, iterationbyte
 
         raise SqlDataNotFoundError(f"Data for {name} not found")
+
+    def check_tls_credentials(self, username: str, password: str) -> str:
+        self.__logger__.write(f"User {username} attempts login")
+        metadata = self.__user_metadata__
+        engine = self.__user_data_engine__
+
+        users = self.__query_table__("users", metadata, engine)
+
+        hashed_name, hashed_password = hash_str(username), hash_str(password)
+
+        for data in users:
+            if hashed_name == data[1] and hashed_password == data[2]:
+                self.__logger__.write(f"User {username} has logged")
+                return data[3]
+
+        raise SqlDataNotFoundError(f"Data for {username} not found")
 
     def update_scram_variables(self,
                                username: str,
@@ -143,10 +160,8 @@ class DBmanager:
             client_secret=stored_key,
             iteration=iteration_count
         )
-        try:
-            self.__execute_user_data_operation__(statement)
-        except Exception as e:
-            print(e.__str__(), file=sys.stdout)  # TODO: debug only
+
+        self.__execute_user_data_operation__(statement)
 
     def select_all_in_table(self, tablename) -> typing.List:
 

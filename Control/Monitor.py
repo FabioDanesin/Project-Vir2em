@@ -70,7 +70,7 @@ class Monitor:
 
             self.__logger__.write("Ottenute le seguenti variabili globali: ")
             for a in self.__variables__:
-                self.__logger__.__write__(str(a) + "\n")
+                self.__logger__.__write__(">> " + str(a) + "\n")
 
         except Exception:
 
