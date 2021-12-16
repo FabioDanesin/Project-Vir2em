@@ -100,7 +100,6 @@ class DBmanager:
     def check_credentials(self, name: str) -> Tuple[bytes, bytes, bytes, bytes]:
         # Procedura di login per scram. La rimozione è in corso d'opera
 
-
         self.__logger__.write(f"User {name} is attempting to log in")
 
         timestart = time.time()  # Timer
