@@ -4,7 +4,7 @@ import pathlib
 from random import Random
 
 import requests
-
+# Danilo non toccare sta roba
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_required, current_user
 from Configuration.DBmanager import DBmanager, SqlDataNotFoundError

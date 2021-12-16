@@ -1,5 +1,3 @@
-import os
-
 import opcua
 from opcua import Client
 from typing import List
