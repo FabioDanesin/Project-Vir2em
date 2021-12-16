@@ -133,7 +133,14 @@ class DBmanager:
         hashed_name, hashed_password = hash_str(username), hash_str(password)
 
         for data in users:
-            if hashed_name == data[1] and hashed_password == data[2]:
+
+            tname = data[1]
+            tpassword = data[2]
+            islocked = data[8]
+
+            if hashed_name == tname and hashed_password == tpassword:
+                if islocked:
+                    self.__logger__.write(f"User {username} is a locked account")
                 self.__logger__.write(f"User {username} has logged")
                 return data[3]
 
