@@ -5,11 +5,9 @@ from random import Random
 
 import requests
 # Danilo non toccare sta roba
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, login_required, current_user
-from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
+
 from flask import Flask, redirect, request, render_template, url_for, make_response, Response
-from scramp import ScramMechanism, ScramClient, ScramException
+from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
 
 authenticated = False
 TEMPLATE_DIR = "templates"
@@ -46,7 +44,7 @@ app.template_folder = os.path.join(pathlib.Path(__file__).parent.resolve(), TEMP
 app.config['SECRET_KEY'] = "ASDASFCVERV2934282374"
 app.config['ENV'] = "development"
 
-bycrypt = Bcrypt(app)
+# bycrypt = Bcrypt(app)
 
 
 #
@@ -129,4 +127,4 @@ def load_user():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host=HOST)
+    app.run(debug=True, host=HOST, port=443, ssl_context=('cert.pem', 'key.pem'))

@@ -38,7 +38,7 @@ class Monitor:
 
         try:
             # Connessione del client sul punto di ascolto definito dall' URL
-            self.__logger__.write("Tentativo di connessione all'URL " + _url)
+            self.__logger__.write("Tentativo di connessione all'URL " + self.__url__)
             self.__client__.connect()
 
             self.__logger__.write("Connessione avvenuta con successo")
