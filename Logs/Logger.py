@@ -108,6 +108,7 @@ class Logger:
 
             # Reimposta il tempo di apertura all'ora corrente
             self.opened_file_time = datetime.datetime.now()
+            self.tomorrow = self.opened_file_time + datetime.timedelta(days=1)
 
             # Sostituisce il file vecchio
             self.file = Logger.__open_file__(self.filetype, self.opened_file_time, self.filename, "w")
