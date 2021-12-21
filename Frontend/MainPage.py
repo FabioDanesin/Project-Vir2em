@@ -7,9 +7,14 @@ import requests
 # Danilo non toccare sta roba
 
 from flask import Flask, redirect, request, render_template, url_for, make_response, Response
+from flask_login import login_required, current_user, LoginManager
+
+from Configuration import KeyNames
 from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
+from Parser import get_parsed_data
 
 authenticated = False
+parserdata = get_parsed_data()
 TEMPLATE_DIR = "templates"
 DEFAULT_NONCE_LENGTH = 128
 
@@ -36,13 +41,15 @@ def generate_nonce(length=DEFAULT_NONCE_LENGTH):
 # Configurazione Flask App
 #
 
-HOST = "localhost"
+HOST = parserdata.get(KeyNames.site_ip)
+PORT = parserdata.get(KeyNames.site_port)
 
 app = Flask(__name__)
 app.debug = True
 app.template_folder = os.path.join(pathlib.Path(__file__).parent.resolve(), TEMPLATE_DIR)
 app.config['SECRET_KEY'] = "ASDASFCVERV2934282374"
 app.config['ENV'] = "development"
+
 
 # bycrypt = Bcrypt(app)
 
@@ -106,7 +113,7 @@ def logout():
 
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/login")
-def load_user():
+def load_user(_userid=None):  # Userid non è usato
     global authenticated
 
     error = False
@@ -114,11 +121,17 @@ def load_user():
 
     if request.method == "POST":
         try:
+            u = request.form["username"]
+            p = request.form["password"]
 
-            # db.check_credentials(request.form['username'])
-            db.check_credentials("Vir2em_Fabio")
+            try:
+                db.check_credentials(u, p)
+            except RuntimeError as e:
+                raise SqlDataNotFoundError(f"Data for user {u} does not exist")
+
             authenticated = True
             return redirect(url_for("datapage"))
+
         except SqlDataNotFoundError as s:
             error = True
             reason = s.__str__()
@@ -127,4 +140,4 @@ def load_user():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host=HOST, port=443, ssl_context=('cert.pem', 'key.pem'))
+    app.run(debug=True, host=HOST)
