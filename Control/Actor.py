@@ -1,3 +1,7 @@
+import typing
+
+from typing import List, Dict
+
 from Control import Monitor
 from opcua import ua, Node
 
@@ -13,7 +17,11 @@ class Actor:
     def __init__(self, monitor: Monitor.Monitor = Monitor.Monitor.get_instance()):
 
         self.__monitor__ = monitor
-        self.__parameter_nodes__ = []
+        # Si presume che non vi siano problemi di race condition in quanto nessuno dovrebbe modificare le variabili
+        # globali nel PLC a runtime senza prima riavviare il server. Non vengono quindi implementati sistemi di lock o
+        # mutex.
+        self.__parameter_nodes__: List[typing.Tuple[str, bool, Node]] = []
+        self.__structs__: Dict[str, list] = {}
 
         for a in monitor.__variables__:
             canwrite = True
@@ -27,27 +35,31 @@ class Actor:
                 canwrite = False
 
             finally:
-                self.__parameter_nodes__.append(
-                    (
-                        a.get_browse_name().Name,  # ->string: Nome della variabile
-                        canwrite,  # ->bool: Se la variabile è scrivibile
-                        a  # ->Node: Nodo della variabile
-                    )
-                )
+                name = a.get_browse_name().Name
+                tup = (name, canwrite, a)
+                self.__parameter_nodes__.append(tup)
 
-    def __get_variable__(self, name: str):
+    def __get_variable__(self, name: str) -> typing.Tuple[str, bool, Node]:
         """
-            Metodo privato per l'ottentimento della variabile da scrivere. Ritorna la variabile e un booleano,
+            Metodo privato per l'ottentimento della variabile da scrivere. Ritorna la tripla corrispondente,
             che indica se è scrivibile o meno.
+            :param name: Nome del nodo richiesto
         """
         _node = None
         for triples in self.__parameter_nodes__:
             if triples[0] == name:
                 _node = triples
+        if _node is None:
+            raise RuntimeError(f"Node {name} does not exist")
 
         return _node
 
     def get_variable(self, name):
+        """
+        Ottiene il nodo della variabile richiesta.
+        :param name:
+        :return:
+        """
         v = self.__get_variable__(name)
         return v[2].get_value()
 

@@ -97,79 +97,59 @@ class DBmanager:
         # sarà una lista di ennuple.
         self.__logger__.write("Inizializzazione avvenuta con successo")
 
-    def check_credentials(self, name: str) -> Tuple[bytes, bytes, bytes, bytes]:
-        # Procedura di login per scram. La rimozione è in corso d'opera
+    def check_credentials(self, username: str, password: str) -> str:
+        """
+        Metodo per il login tramite TLS con username e password. L'account richiesto deve contenere lo username e
+        password corrispondenti e non deve essere un account bloccato.
 
-        self.__logger__.write(f"User {name} is attempting to log in")
+        :param username: Username richiesto
+        :param password: Password dell'account
+        :return: Stringa con esplicitazione di permessi(READ, WRITE, ADMIN)
+        """
+        self.__logger__.write(f"User {username} is attempting login")
 
-        timestart = time.time()  # Timer
-        # Copia i contenuti la tabella users
-        users = self.__query_table__('users', self.__user_metadata__, self.__user_data_engine__)
-        hashedname = hash_str(name)
-
-        # Compara le triple
-        for data in users:
-
-            if hashedname == data[1]:
-                timenow = time.time() - timestart
-                self.__logger__.write(f"User {name} login successful. Elapsed time={timenow}")
-
-                saltbyte = data[4].encode()
-                serversecretbyte = data[5].encode()
-                userkeybyte = data[6].encode()
-                iterationbyte = data[7]
-
-                return saltbyte, userkeybyte, serversecretbyte, iterationbyte
-
-        raise SqlDataNotFoundError(f"Data for {name} not found")
-
-    def check_tls_credentials(self, username: str, password: str) -> str:
-        self.__logger__.write(f"User {username} attempts login")
         metadata = self.__user_metadata__
         engine = self.__user_data_engine__
 
+        # Pulla gli users
         users = self.__query_table__("users", metadata, engine)
-
+        # Hasha la password. Il db contiene solo password hashate con SHA-256.
         hashed_name, hashed_password = hash_str(username), hash_str(password)
 
         for data in users:
 
-            tname = data[1]
-            tpassword = data[2]
-            islocked = data[8]
+            tname = data[1]  # Username
+            tpassword = data[2]  # Password associata
+            islocked = data[8]  # Booleano per il blocco account. False=account libero, True=account bloccato
 
             if hashed_name == tname and hashed_password == tpassword:
                 if islocked:
-                    self.__logger__.write(f"User {username} is a locked account")
+                    self.__logger__.write(f"WARNING:User {username} is a locked account")
+                    raise SqlDataNotFoundError(f"{username}'s account is locked. This incident will be reported")
+
                 self.__logger__.write(f"User {username} has logged")
                 return data[3]
 
         raise SqlDataNotFoundError(f"Data for {username} not found")
 
-    def update_scram_variables(self,
-                               username: str,
-                               salt: str,
-                               stored_key: str,
-                               server_key: str,
-                               iteration_count: str
-                               ) -> None:
-        metadata = self.__user_metadata__
-        engine = self.__user_data_engine__
-
-        table = self.__get_existing_table__("users", metadata, engine)
-
-        statement = table.update() \
-            .where(table.c["name"] == hash_str(username)) \
-            .values(
-            salt=salt,
-            server_secret=server_key,
-            client_secret=stored_key,
-            iteration=iteration_count
-        )
-
-        self.__execute_user_data_operation__(statement)
-
     def select_all_in_table(self, tablename) -> typing.List:
+        """
+        Ritorna una lista di ennuple(pari al numero di colonne della tabella richiesta) contenenti tutti i dati
+        nella tabella con quel nome.
+        :param tablename: Nome della tabella richiesta
+        :return: Lista di ennuple
+        """
+        # MetaData contiene una lista di "chiavi" corrisponenti ai nomi delle tabelle contenuti al suo interno(NON all'
+        # interno del database). Se ci sono 2 tabelle nei 2 database con lo stesso nome, verrà loggato un warning
+
+        user_db_keys, plc_metadata_keys = self.__user_metadata__.tables.keys(), self.__plc_metadata__.tables.keys()
+
+        c1, c2 = tablename in user_db_keys, tablename in plc_metadata_keys
+
+        if c1 and c2:
+            s = f"WARNING: 2 similar tables detected in User database and Plc metadata database by the name {tablename}"
+            self.__logger__.write(s)
+            raise RuntimeError("Duplicate table detected")
 
         if tablename in self.__user_metadata__.tables.keys():
             meta = self.__user_metadata__
@@ -232,13 +212,15 @@ class DBmanager:
         metadata = self.__plc_metadata__
 
         table = self.__get_existing_table__(name, metadata, engine)
+
         timestamp_column = table.c["Timestamp"]
         hour_column = table.c["Hour"]
+
         if begin_hour is None:
             # Caso neutro
             begin_clause = and_(True)
         else:
-            # Obbligatoria come sintassi, altrimenti non compila
+            # Obbligatoria come sintassi, altrimenti non compila correttamente
             begin_clause = and_(hour_column >= begin_hour).compile()
 
         if end_hour is None:
