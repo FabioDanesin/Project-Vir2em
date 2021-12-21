@@ -2,7 +2,7 @@ import os
 
 servicepath = "/etc/systemd/system"
 servicename = "OpcUa.service"
-selfpath = os.path.abspath("")
+selfpath = pathlib.Path(__file__).parent.resolve().__str__()
 filename = "ProjectData.txt"
 projectdescription = ""
 

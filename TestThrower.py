@@ -1,11 +1,13 @@
 import os
+import pathlib
+
 from Configuration import KeyNames
 from Parser import get_parsed_data
 from Logs.Logger import Logger, Filetype
 
 connection = True
 data = get_parsed_data()
-path = os.path.abspath("")
+path = pathlib.Path(__file__).parent.resolve().__str__()
 tests = os.listdir(path + "/Tests")
 print(tests)
 
