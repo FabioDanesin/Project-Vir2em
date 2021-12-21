@@ -9,4 +9,6 @@ db_port = "DATABASEPORT"
 db_admin_name = "DATABASEADMINNAME"
 db_admin_password = "DATABASEADMINPASSWORD"
 logs = "LOGSPATH"
+site_ip = "SITEIP"
+site_port = "SITEPORT"
 # L'unico scopo del file è contenere tutte le keyword usate nel programma per le variabili ottenute dal parser
