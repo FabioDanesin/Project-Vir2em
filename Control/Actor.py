@@ -10,7 +10,7 @@ instance = None
 
 class Actor:
     """
-    Questa classe permette a un client di scrivere dati / mandare segnali ad un controllore. Mantiene gli stessi
+    Questa classe permette a un client di scrivere dati / mandare segnali a un controllore. Mantiene gli stessi
     privilegi di lettura dati dal Monitor, con l'aggiunta di poter inviare segnali per la scrittura
     """
 
@@ -26,7 +26,7 @@ class Actor:
         for a in monitor.__variables__:
             canwrite = True
             try:
-                # Per testare se la variabile può essere scritta si tenta di inserire il valore corrente della
+                # Per testare se la variabile può essere scritta si tenta d'inserire il valore corrente della
                 # variabile stessa. Nel caso peggiore, il permesso è negato e la variabile non è scrivibile.
                 # Nel caso migliore, la variabile è scrivibile e il suo valore non cambia.
                 self.set_variable(a.get_browse_name(), a.get_value())
@@ -41,9 +41,9 @@ class Actor:
 
     def __get_variable__(self, name: str) -> typing.Tuple[str, bool, Node]:
         """
-            Metodo privato per l'ottentimento della variabile da scrivere. Ritorna la tripla corrispondente,
-            che indica se è scrivibile o meno.
-            :param name: Nome del nodo richiesto
+        Metodo privato per ottenere la variabile da scrivere. Ritorna la tripla corrispondente,
+        che indica se è scrivibile o meno.
+        :param name: Nome del nodo richiesto
         """
         _node = None
         for triples in self.__parameter_nodes__:

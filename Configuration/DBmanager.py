@@ -54,7 +54,7 @@ def make_data():
     return d_eng, d_con, d_insp, d_base
 
 
-# Utility function per hashare
+# Utility function for hashing
 def hash_str(s: str):
     return hashlib.sha256(s.encode()).hexdigest()
 
@@ -66,7 +66,7 @@ instance = None
 class DBmanager:
     """
     Classe per gestire lettura e scrittura del database in Postgres per la gestione degli accessi. Questa classe
-    segue lo stesso design pattern dei singleton. Questa classe non "accende" il database, ma si collega solo ad un
+    segue lo stesso design pattern dei singleton. Questa classe non "accende" il database, ma si collega solo a un
     account già collegato da cui poi opera. Non è necessario imparare la sintassi del database per usare questa classe
     in quanto opera in ORM.
     """
@@ -74,7 +74,7 @@ class DBmanager:
     def __init__(self):
         self.__logger__ = Logger(_log_path_, "Database log", Filetype.LOCAL)
 
-        # Crea l'engine per comunicare con il DB
+        # Crea un engine per comunicare con il DB
         self.__user_data_engine__ = create_engine(user_database_connection_string)
         self.__plc_data_engine__ = create_engine(plc_data_database_connection_string)
 
@@ -85,7 +85,7 @@ class DBmanager:
         self.__user_data_connection__ = self.__user_data_engine__.connect()
         self.__plc_data_connection__ = self.__plc_data_engine__.connect()
 
-        # Questa classe serve per mantenere tutti di dati parzialmente parsati prima di "pusharli" sul database
+        # Questa classe serve per mantenere tutti di dati parzialmente parsati prima di caricarli sul database
         self.__user_metadata__ = MetaData(self.__user_data_connection__)
         self.__plc_metadata__ = MetaData(self.__plc_data_connection__)
 
@@ -136,8 +136,8 @@ class DBmanager:
         :param tablename: Nome della tabella richiesta
         :return: Lista di ennuple
         """
-        # MetaData contiene una lista di "chiavi" corrisponenti ai nomi delle tabelle contenuti al suo interno(NON all'
-        # interno del database). Se ci sono 2 tabelle nei 2 database con lo stesso nome, verrà loggato un warning
+        # MetaData contiene una lista di "chiavi" corrispondenti ai nomi delle tabelle contenuti al suo interno(NON all'
+        # interno del database). Se ci sono due tabelle nei due database con lo stesso nome, verrà loggato un warning
 
         user_db_keys, plc_metadata_keys = self.__user_metadata__.tables.keys(), self.__plc_metadata__.tables.keys()
 

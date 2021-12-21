@@ -19,7 +19,7 @@ class Filetype(enum.Enum):
 
 class Logger:
     """
-    Classe rappresentante il system logger. Espone solo 2 metodi, entrambi per la scrittura. Non sono previsti lock.
+    Classe rappresentante il system logger. Espone solo due metodi, entrambi per la scrittura. Non sono previsti lock.
     Ogni istanza della classe logger produce un nuovo file a se stante.
     """
 
@@ -70,9 +70,8 @@ class Logger:
     @staticmethod
     def __get_time__():
         """
-        Ottieni l'ora sotto forma di una tripla di interi.
-
-        :return: una tripla di interi formattata in (hh,mm,ss)
+        Ottieni l'ora sotto forma di una tripla d'interi.
+        :return: una tripla d'interi formattata in (hh, mm, ss)
         """
         now = datetime.datetime.now()
         h, m, s = now.hour, now.minute, now.second
@@ -90,7 +89,7 @@ class Logger:
         timestamp = f"[{str(h)}:{str(m)}:{str(s)}]:"  # Formattazione più chiara così 
 
         # Il flushing permette che il sistema scriva tutto immediatamente al file, altrimenti resterà in un file IO
-        # buffer finchè non verrà chiamata una flush.
+        # buffer finché non verrà chiamata una flush.
         self.__write__(timestamp + string + "\n")
         self.file.flush()
 
