@@ -63,7 +63,7 @@ class Actor:
         v = self.__get_variable__(name)
         return v[2].get_value()
 
-    def set_variable(self, name, value):
+    def set_variable(self, name: str, value: any):
         """
         Permette di settare la variabile corrispondente al valore richiesto
         :param name: Nome della variabile
@@ -93,19 +93,14 @@ class Actor:
             else:
                 raise ReadOnlyWriteException("Variabile non scrivibile")
 
-        #    except ReadOnlyWriteException:
-        #        self.__logger__.write("Variabile di sola lettura. Scrittura ignorata")
-        #
-        #    except Exception as f:
-        #        self.__logger__.write(
-        #            f"Utente {self.__username__} ha ottenuto un errore nella scrittura di {name}"
-        #            f"{f.__cause__}"
-        #        )
-
         finally:
             return rval
 
-    def get_variable_names(self):
+    def get_variable_names(self) -> List[str]:
+        """
+        Ritorna i nomi di tutte le variabili globali contenute nel server.
+        :return:
+        """
         names = []
         for d in self.__parameter_nodes__:
             names.append(d[0])
@@ -113,6 +108,10 @@ class Actor:
 
     @staticmethod
     def get_instance():
+        """
+        Metodo statico per il ritorno della classe Actor. Se non dovesse esistere, ne inizializza una nuova istanza.
+        :return:
+        """
         global instance
         if instance is None:
             instance = Actor()

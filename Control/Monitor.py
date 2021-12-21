@@ -1,5 +1,5 @@
 import opcua
-from opcua import Client
+from opcua import Client, Node
 from typing import List
 
 from Logs.Logger import Logger, Filetype
@@ -18,16 +18,11 @@ instance = None
 
 class Monitor:
     """
-        Classe per monitorare i valori all'interno del controllore. Espone metodi di sola lettura dei valori nel
-        controller e non chiede richiesta di autenticazione.
+    Classe per monitorare i valori all'interno del controllore. Espone metodi di sola lettura dei valori nel
+    controller.
     """
 
     def __init__(self, logfile_name="Monitor Log File"):
-        """
-        L'inizializzazione della classe prepara un thread separato per il polling. Tali variabili sono estraibili
-        solo dalle sottoclassi.
-
-        """
 
         path = parsed_data.get(KeyNames.logs)
         self.__logger__: Logger = Logger(path, logfile_name, Filetype.LOCAL)
@@ -38,7 +33,7 @@ class Monitor:
 
         try:
             # Connessione del client sul punto di ascolto definito dall' URL
-            self.__logger__.write("Tentativo di connessione all'URL " + self.__url__)
+            self.__logger__.write(f"Tentativo di connessione all'URL {self.__url__}")
             self.__client__.connect()
 
             self.__logger__.write("Connessione avvenuta con successo")
@@ -46,7 +41,7 @@ class Monitor:
 
             # Estrazione del nome del controller
             controllername = parsed_data.get(KeyNames.controllername)
-            self.__logger__.write("Estratto nome del controller: " + controllername)
+            self.__logger__.write(f"Estratto nome del controller: {controllername}")
 
             # Estrazione delle variabili di stato del controller
             self.__controller_state_variables__: List[opcua.Node] = self.__obj_node__.get_children()
@@ -68,7 +63,7 @@ class Monitor:
 
             self.__logger__.write("Ottenute le seguenti variabili globali: ")
             for a in self.__variables__:
-                self.__logger__.__write__(">> " + str(a) + "\n")
+                self.__logger__.__write__(f"\t{str(a)}\n")
 
         except Exception:
 
@@ -78,19 +73,29 @@ class Monitor:
 
             raise RuntimeError()
 
-    def get_variable_node(self, name):
+    def get_variable_node(self, name: str) -> Node:
+        """
+        Ritorna il nodo associato a quella variabile
+        :param name: Nome del nodo
+        :return: Nodo
+        :except RuntimeException: Il nodo richiesto non esiste.
+        """
         for a in self.__variables__:
             if a.get_browse_name() == name:
                 return a
 
+        self.__logger__.write(f"ERROR: requested node{name} does not exist")
+        raise RuntimeError("Requested node does not exist")
+
     @staticmethod
     def get_instance():
-        global instance
         """
         Metodo esterno per ottenere l'istanza del monitor. Nota che se un istanza monitor ancora non esiste, ritornerà
         None, senza istanziarne una con parametri a sua scelta.
         :return: l'istanza di Monitor se ne esiste una, None altrimenti.
         """
+
+        global instance
         if instance is None:
             instance = Monitor()
         return instance

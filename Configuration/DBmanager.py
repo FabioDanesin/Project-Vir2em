@@ -1,17 +1,14 @@
 import datetime
-import typing
-import time
 import hashlib
-
-from typing import Tuple
+import typing
 
 from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_
-from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.exc import NoSuchTableError
+from sqlalchemy.ext.automap import automap_base
 
 from Configuration import KeyNames
-from Parser import get_parsed_data
 from Logs.Logger import Logger, Filetype
+from Parser import get_parsed_data
 
 parsed_data = get_parsed_data()
 
