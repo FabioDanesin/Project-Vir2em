@@ -4,3 +4,4 @@ flask~=2.0.1
 typing-extensions
 opcua~=0.98.13
 scramp
+flask_login
