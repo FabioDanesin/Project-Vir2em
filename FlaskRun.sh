@@ -1,4 +1,3 @@
-systemctl stop apache2
 cd Frontend
 export FLASK_APP=MainPage.py
 export FLASK_ENV=development

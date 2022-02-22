@@ -94,7 +94,7 @@ class DBmanager:
         # sarà una lista di ennuple.
         self.__logger__.write("Inizializzazione avvenuta con successo")
 
-    def check_credentials(self, username: str, password: str) -> str:
+    def check_credentials(self, username: str, password: str) -> typing.Dict[str, str]:
         """
         Metodo per il login tramite TLS con username e password. L'account richiesto deve contenere lo username e
         password corrispondenti e non deve essere un account bloccato.
@@ -111,7 +111,11 @@ class DBmanager:
         # Pulla gli users
         users = self.__query_table__("users", metadata, engine)
         # Hasha la password. Il db contiene solo password hashate con SHA-256.
-        hashed_name, hashed_password = hash_str(username), hash_str(password)
+        if hash:
+            hashed_name, hashed_password = hash_str(username), hash_str(password)
+        else:
+            hashed_name = username
+            hashed_password = password
 
         for data in users:
 
@@ -125,7 +129,11 @@ class DBmanager:
                     raise SqlDataNotFoundError(f"{username}'s account is locked. This incident will be reported")
 
                 self.__logger__.write(f"User {username} has logged")
-                return data[3]
+                return {
+                    "ID": data[0],
+                    "Name": data[1],
+                    "Password": data[2]
+                }
 
         raise SqlDataNotFoundError(f"Data for {username} not found")
 
