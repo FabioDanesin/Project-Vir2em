@@ -54,7 +54,7 @@ def make_data():
     return d_eng, d_con, d_insp, d_base
 
 
-# Utility function for hashing
+# Funzione di shortcut per hashing di stringhe
 def hash_str(s: str):
     return hashlib.sha256(s.encode()).hexdigest()
 
@@ -62,7 +62,6 @@ def hash_str(s: str):
 instance = None
 
 
-# TODO: rivedere commenti.
 class DBmanager:
     """
     Classe per gestire lettura e scrittura del database in Postgres per la gestione degli accessi. Questa classe
@@ -77,9 +76,6 @@ class DBmanager:
         # Crea un engine per comunicare con il DB
         self.__user_data_engine__ = create_engine(user_database_connection_string)
         self.__plc_data_engine__ = create_engine(plc_data_database_connection_string)
-
-        # Inspector espone dei metodi per l'ottenimento delle tabelle presenti nel database in modo da avere una
-        # visione piena dell'intero schema. Richiede un engine a cui eseguire il binding.
 
         # Effettua la connessione al database url per i dati user e dati plc
         self.__user_data_connection__ = self.__user_data_engine__.connect()
@@ -101,7 +97,7 @@ class DBmanager:
 
         :param username: Username richiesto
         :param password: Password dell'account
-        :return: Stringa con esplicitazione di permessi(READ, WRITE, ADMIN)
+        :return: Dictionary con dettagli dello user(ID, Nome, Password)
         """
         self.__logger__.write(f"User {username} is attempting login")
 
@@ -126,7 +122,7 @@ class DBmanager:
             if hashed_name == tname and hashed_password == tpassword:
                 if islocked:
                     self.__logger__.write(f"WARNING:User {username} is a locked account")
-                    raise SqlDataNotFoundError(f"{username}'s account is locked. This incident will be reported")
+                    raise RuntimeError(f"{username}'s account is locked. This incident will be reported")
 
                 self.__logger__.write(f"User {username} has logged")
                 return {
@@ -146,9 +142,11 @@ class DBmanager:
         """
         # MetaData contiene una lista di "chiavi" corrispondenti ai nomi delle tabelle contenuti al suo interno(NON all'
         # interno del database). Se ci sono due tabelle nei due database con lo stesso nome, verrà loggato un warning
+        # e l'operazione verrà abortita.
 
         user_db_keys, plc_metadata_keys = self.__user_metadata__.tables.keys(), self.__plc_metadata__.tables.keys()
 
+        # Ritorna true se il nome della tabella è contenuto nell'insieme dato
         c1, c2 = tablename in user_db_keys, tablename in plc_metadata_keys
 
         if c1 and c2:
@@ -187,15 +185,22 @@ class DBmanager:
         :param name: Nome della variabile
         :param value: Valore della media
         """
+        # Shortcutting
         engine = self.__plc_data_engine__
         connection = self.__plc_data_connection__
         metadata = self.__plc_metadata__
 
+        # Trasformo il dato in stringa e ottengo data e ora
         stringdata = str(value)
         __time = datetime.datetime.now()
         hour = __time.hour
+        table = None  # Serve solo per evitare il warning
 
-        if not engine.dialect.has_table(connection, name):
+        try:
+            # Tento di fetchare la tabella dal database
+            table = self.__get_existing_table__(name, metadata, engine)
+        except NoSuchTableError:
+            # La tabella non esiste. Deve essere creata
             table = Table(
                 name,
                 metadata,
@@ -203,44 +208,70 @@ class DBmanager:
                 Column("Hour", INTEGER, nullable=False),
                 Column("Value", VARCHAR(20), nullable=False)
             )
-            table.create(engine)
-        else:
-            table = self.__get_existing_table__(name, metadata, engine)
+        finally:
+            # Preparazione statement per l'insert
+            insert_data = (__time, hour, stringdata)
+            statement = table.insert(insert_data)
 
-        insert_data = (__time, hour, stringdata)
-        statement = table.insert(insert_data)
+            # Esecuzione. Non deve ritornare nulla
+            self.__execute_plc_data_operation__(statement)
 
-        self.__execute_plc_data_operation__(statement)
-
-    def get_variable_in_timeframe(self, name, begin_day, end_day, begin_hour=None, end_hour=None):
+    def get_variable_in_timeframe(self, name: str, begin_date: str, end_date: str, begin_hour: str = None,
+                                  end_hour: str = None) \
+            -> typing.List[typing.Tuple[datetime.date, int, str]]:
+        """
+        Ritorna una lista della tabella dal nome corrispondente a name nel range di data e ora richiesta.
+        :param name: Nome della variabile richiesta
+        :param begin_date: Limite inferiore della data di registrazione
+        :param end_date: Limite superiore della data di registrazione
+        :param begin_hour: Limite inferiore per l'ora di registrazione
+        :param end_hour: Limite superiore per l'ora di registrazione
+        :return: Lista di tipo date * int * string, rispettivamente data, ora e valore registrato.
+        """
+        # Solo per scopi di naming
         engine = self.__plc_data_engine__
         metadata = self.__plc_metadata__
 
+        # Fetcho la tabella 'name' contenuta nel database
         table = self.__get_existing_table__(name, metadata, engine)
 
+        # Estraggo le colonne "Timestamp" e "Hour" di table
         timestamp_column = table.c["Timestamp"]
         hour_column = table.c["Hour"]
 
         if begin_hour is None:
-            # Caso neutro
+            # Caso neutro, qualsiasi ora va bene
             begin_clause = and_(True)
         else:
             # Obbligatoria come sintassi, altrimenti non compila correttamente
             begin_clause = and_(hour_column >= begin_hour).compile()
 
+        # Lo stesso identico procedimento è fatto per l'ora di limite inferiore
         if end_hour is None:
             end_clause = and_(True)
         else:
             end_clause = and_(end_hour <= hour_column).compile()
 
-        where_clause = and_(begin_day <= timestamp_column, end_day >= timestamp_column, begin_clause, end_clause)
-        statement = table.select().where(where_clause.compile())
-        res = self.__execute_plc_data_operation__(statement).fetchall()
+        # Composizione della clausola WHERE
+        where_clause = and_(begin_date <= timestamp_column, end_date >= timestamp_column, begin_clause, end_clause)
 
-        return res
+        # Statement finale è SELECT * FROM 'table' WHERE 'where_clause'
+        statement = table.select().where(where_clause)
+
+        # Wrappa l'esecuzione e ritorna la risposta dal DB
+        result = self.__execute_user_data_operation__(statement)
+
+        return result.fetchall()  # .fetchall() garantisce che il tipo di ritorno sia corretto
 
     @staticmethod
     def __get_existing_table__(name, metadata, engine) -> Table:
+        """
+        Ritorna l'oggetto corrispondente alla tabella contenuto nel DB
+        :param name: Nome della tabella
+        :param metadata: Metadati utilizzati per contenere la tabella richiesta
+        :param engine: Engine stanziato per quella tabella e metadati
+        :return: Tabella di nome richiesto
+        """
         return Table(
             name,
             metadata,
@@ -250,28 +281,53 @@ class DBmanager:
         )
 
     def __execute_user_data_operation__(self, __op):
-        # Shortcut per esecuzione di query / modifiche sul database
+        """
+        Shortcut per esecuzione di query / modifiche sul database
+        :param __op: Operazione da eseguire
+        :return: Risultato della execute. Potrebbe essere None
+        """
         return self.__user_data_connection__.execute(__op)
 
     def __execute_plc_data_operation__(self, __op):
+        """
+        Shortcut per l'esecuzione di interrogazioni / aggiunte dati al database per le variabili del PLC
+        :param __op: Operazione da eseguire
+        :return: Risultato della execute. Potrebbe essere None
+        """
         return self.__plc_data_connection__.execute(__op)
 
     def __query_table__(self, tablename: str, metadata, engine):
+        """
+        Esegue il SELECT * della tabella passata come tablename. Richiede i suoi metadati e il suo engine.
+        Dato che il contenuto può variare, sta al chiamante sapere il tipo di ritorno in modo preventivo.
+        Se la tabella non esiste nel database, ritorna None.
+
+        :param tablename: Nome della tabella.
+        :param metadata: Metadati in cui la tabella è registrata.
+        :param engine: Engine usato per stabilire e mantenere la connessione.
+        :return: Lista dei contenuti della tabella.
+        """
         if not isinstance(tablename, str):
             raise TypeError("A string is required")
         result = None
         try:
             # Si può fare una select su una tabella già presente nel database
             table = self.__get_existing_table__(tablename, metadata, engine)
+
+            # SELECT * FROM 'table'
             statement = table.select()
+
+            # Esegue il fetch di tutto il contenuto della tabella
             result = self.__execute_user_data_operation__(statement).fetchall()
+
         except NoSuchTableError as f:
             self.__logger__.write(f.__cause__)
+
         finally:
             return result
 
 
-class SqlDataNotFoundError(Exception):
+class SqlDataNotFoundError(RuntimeError):
 
     def __init__(self, option):
         super()

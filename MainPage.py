@@ -1,4 +1,4 @@
-import json
+import datetime
 import os
 import pathlib
 from random import Random
@@ -9,7 +9,9 @@ import requests
 
 from flask import Flask, redirect, request, render_template, url_for, make_response, Response
 from flask_login import login_required, current_user, LoginManager, UserMixin, logout_user
+from json import loads, dumps
 
+# import Control.Monitor
 from Configuration import KeyNames
 from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
 from Parser import get_parsed_data
@@ -24,9 +26,14 @@ DEFAULT_NONCE_LENGTH = 128
 #
 
 db = DBmanager.get_instance()
+# monitor = Control.Monitor.Monitor.get_instance()
 random = Random()
 Logname = "FlaskApplicationLog"
 logfile = Logger(parserdata.get(KeyNames.logs), Logname, Filetype.LOCAL)
+
+
+def log(s):
+    logfile.write(s)
 
 
 def generate_nonce(length=DEFAULT_NONCE_LENGTH):
@@ -112,9 +119,34 @@ login_manager.init_app(app)
 # Routes
 #
 
-@app.route("/datarequest", methods=["POST"])
-def parse_request(jsonrequest : json):
+@login_required
+@app.route("/datarequest")
+def parse_request(jsonrequest: str):
+    year = datetime.datetime.now().year
+    defaults = {
+        "begin_day": f"{year}-01-01",
+        "end_day": f"{year}-12-31",
+        "begin_hour": "0",
+        "end_hour": "23"
+    }
 
+    try:
+        with loads(jsonrequest) as loaded_json_data:
+            name = loaded_json_data['name']
+            timeframe: Dict = loaded_json_data['timeframe']
+            for key in timeframe.keys():
+                defaults[key] = timeframe[key]
+
+        data = db.get_variable_in_timeframe(
+            name,
+            defaults['begin_day'],
+            defaults['end_day'],
+            defaults['begin_hour'],
+            defaults['end_hour']
+        )
+
+    except KeyNames as k:
+        print(f"Key error detected : {k}")
 
 
 @login_required
@@ -133,22 +165,34 @@ def request_url():
 
 @app.route("/logout")
 @login_required
-def logout():
+def logout() -> Response:
+    """
+    Logout user
+    :return:
+    """
     logout_user()
     return redirect(url_for("load_user"))
 
 
 @login_manager.user_loader
 def load_user(uid: str):
+    """
+    Callback di flask_login per il login dello user. Prende una singola stringa
+    :param uid:
+    :return:
+    """
     splitted = uid.split("#")
     u = splitted[0]
     p = splitted[1]
+    print(u)
+    print(p)
 
     try:
         credentials = db.check_credentials(u, p)
         return User(credentials["ID"])
 
     except RuntimeError:
+        print(f"Error {u} {p}")
         return None
 
 
@@ -164,19 +208,17 @@ def login() -> str:
 
         try:
 
-            load_user(f"{u}#{p}")
+            if load_user(f"{u}#{p}") is None:
+                raise RuntimeError()
 
             return redirect(url_for("request_url"))  # noqa, Ritorna comunque una string alla fine del redirect
-        except RuntimeError:
+
+        except RuntimeError as RT:
             error = True
             reason = f"Data for user {u} does not exist"
+            log(reason)
 
     return render_template("loginpage.html", error=error, reason=reason)
-
-
-@app.route("/foo")
-def foo():
-    return "Nothing"
 
 
 if __name__ == '__main__':
