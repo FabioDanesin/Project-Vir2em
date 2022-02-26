@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import typing
 
-from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_
+from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_, update
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.ext.automap import automap_base
 
@@ -325,6 +325,23 @@ class DBmanager:
 
         finally:
             return result
+
+    def lockUser(self, username, password) -> None:
+        """
+        Funzione per bloccare le credenziali di uno user dopo aver raggiunto un numero di tentativi massimi durante il
+        login. Se la coppia username, password non esiste nella tabella delle credenziali del database, i dati non
+        variano.
+        :param username: Username da lockare
+        :param password: Password da lockare
+        :return: None
+        """
+        # TODO: chiedere a Caiazza se usare solo lo username o meno
+        table = self.__get_existing_table__('users', self.__user_metadata__, self.__user_data_engine__)
+        statement = update(table) \
+            .where(and_(table.c['name'] == username, table.c['password'] == password)) \
+            .values(Locked=True)
+
+        self.__execute_user_data_operation__(statement)
 
 
 class SqlDataNotFoundError(RuntimeError):
