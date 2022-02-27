@@ -1,8 +1,9 @@
 import datetime
 import os
 import pathlib
+import threading
 from random import Random
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import requests
 # Danilo non toccare sta roba
@@ -101,15 +102,23 @@ class UserAlreadyLoggedInException(RuntimeError):
 
 HOST = parserdata.get(KeyNames.site_ip)
 PORT = parserdata.get(KeyNames.site_port)
+SSL = False
+MAXATTEMPTS = 5
 
 app = Flask(__name__)
-app.debug = True
-app.template_folder = os.path.join(pathlib.Path(__file__).parent.resolve(), TEMPLATE_DIR)
 app.config['SECRET_KEY'] = "ASDASFCVERV2934282374"
 app.config['ENV'] = "development"
+app.template_folder = "./Frontend/templates"
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+
+def get_connection_root():
+    root = "http"
+    if SSL:
+        root = root + 's'
+    return f"{root}://{HOST}:{PORT}"
 
 
 # bycrypt = Bcrypt(app)
@@ -144,6 +153,7 @@ def parse_request(jsonrequest: str):
             defaults['begin_hour'],
             defaults['end_hour']
         )
+        # TODO: finire
 
     except KeyNames as k:
         print(f"Key error detected : {k}")
@@ -156,8 +166,9 @@ def request_url():
         "Dataname": "NAME",
         "Datavalue": "231"
     }
+
     r = requests.post(
-        "http://127.0.0.1:5000/datarequest",
+        f"{get_connection_root()}/datarequest",
         json=datadict
     )
     return str(r)
@@ -171,28 +182,27 @@ def logout() -> Response:
     :return:
     """
     logout_user()
+    print("logout")
     return redirect(url_for("load_user"))
 
 
 @login_manager.user_loader
-def load_user(uid: str):
+def load_user(uid: str) -> Optional[User]:
     """
-    Callback di flask_login per il login dello user. Prende una singola stringa
-    :param uid:
-    :return:
+    Callback di flask_login per il login dello user. Prende una singola stringa.
+
+    :param uid: Identificazione dello user, in realtà la coppia Username#Password
+    :return: Istanza della classe User se il login ha successo, None altrimenti.
     """
     splitted = uid.split("#")
     u = splitted[0]
     p = splitted[1]
-    print(u)
-    print(p)
 
     try:
         credentials = db.check_credentials(u, p)
         return User(credentials["ID"])
 
     except RuntimeError:
-        print(f"Error {u} {p}")
         return None
 
 
@@ -201,15 +211,14 @@ def load_user(uid: str):
 def login() -> str:
     error = False
     reason = ""
-
     if request.method == "POST":
         u = request.form["username"]
         p = request.form["password"]
 
         try:
-
-            if load_user(f"{u}#{p}") is None:
-                raise RuntimeError()
+            cookiename = 'attempts'
+            cookievalue = request.cookies.get(cookiename)
+            # TODO: finire
 
             return redirect(url_for("request_url"))  # noqa, Ritorna comunque una string alla fine del redirect
 
@@ -222,5 +231,10 @@ def login() -> str:
 
 
 if __name__ == '__main__':
+    sslcont = ('cert.pem', 'key.pem')
+    app.debug = True
     app.template_folder = './Frontend/templates'
-    app.run(debug=True, host=HOST, port=PORT)
+    if SSL:
+        app.run(debug=True, host=HOST, port=PORT, ssl_context=sslcont)
+    else:
+        app.run(debug=True, host=HOST, port=PORT)
