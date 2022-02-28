@@ -18,8 +18,11 @@ from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
 from Parser import get_parsed_data
 from Logs.Logger import Filetype, Logger
 
+# Istanza del parser
 parserdata = get_parsed_data()
+# cartella delle pagine del frontend
 TEMPLATE_DIR = "templates"
+# Attualmente non impiegato
 DEFAULT_NONCE_LENGTH = 128
 
 #
@@ -28,8 +31,11 @@ DEFAULT_NONCE_LENGTH = 128
 
 db = DBmanager.get_instance()
 # monitor = Control.Monitor.Monitor.get_instance()
+# attualmente non impiegato
 random = Random()
+# Nome del file dei log
 Logname = "FlaskApplicationLog"
+# Crea un file di log sul percorse dei log recuperando il path della cartella di log da ProjectData.txt
 logfile = Logger(parserdata.get(KeyNames.logs), Logname, Filetype.LOCAL)
 
 
@@ -37,6 +43,7 @@ def log(s):
     logfile.write(s)
 
 
+# Al momento non usata (usata per comunicazione con scramp)
 def generate_nonce(length=DEFAULT_NONCE_LENGTH):
     s = ""
 
@@ -48,6 +55,7 @@ def generate_nonce(length=DEFAULT_NONCE_LENGTH):
     return s
 
 
+# -------------------------------------------------------------------------------------------------------------------- #
 class User(UserMixin):
     """
     Classe "pupazzetto" per facilitare le politiche di flask_login
@@ -96,15 +104,18 @@ class UserAlreadyLoggedInException(RuntimeError):
         return self.msg
 
 
-#
+# -------------------------------------------------------------------------------------------------------------------- #
 # Configurazione Flask App
 #
 
+# Ip del server in cui viene eseguito il server flask
 HOST = parserdata.get(KeyNames.site_ip)
+# Porta del server
 PORT = parserdata.get(KeyNames.site_port)
 SSL = False
 MAXATTEMPTS = 5
 
+# Inizializzazione di flask -------------- #
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "ASDASFCVERV2934282374"
 app.config['ENV'] = "development"
@@ -114,6 +125,9 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 
+# ---------------------------------------- #
+
+# -------------------------------------------------------------------------------------------------------------------- #
 def get_connection_root():
     root = "http"
     if SSL:
@@ -128,6 +142,8 @@ def get_connection_root():
 # Routes
 #
 
+# Prende una request a Flask e richiede il DB per una variabile
+# TODO: terminare la richiesta al DB
 @login_required
 @app.route("/datarequest")
 def parse_request(jsonrequest: str):
@@ -159,6 +175,7 @@ def parse_request(jsonrequest: str):
         print(f"Key error detected : {k}")
 
 
+# Test di funzionamento di json (inutile al momento)
 @login_required
 @app.route("/sendrequest", methods=["GET"])
 def request_url():
@@ -174,6 +191,8 @@ def request_url():
     return str(r)
 
 
+# Funzione di logout dell'utente da flask
+# TODO: da terminare e rivedere
 @app.route("/logout")
 @login_required
 def logout() -> Response:
@@ -197,6 +216,8 @@ def load_user(uid: str) -> Optional[User]:
     splitted = uid.split("#")
     u = splitted[0]
     p = splitted[1]
+    print(u)
+    print(p)
 
     try:
         credentials = db.check_credentials(u, p)
@@ -209,13 +230,27 @@ def load_user(uid: str) -> Optional[User]:
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/login")
 def login() -> str:
+    """
+    Funzione di login per Flask
+    :return:
+    """
+    error = False  # Se ai è verificato un errore
+    reason = ""  # Che errore si è verificato
+
     error = False
     reason = ""
     if request.method == "POST":
+        # Al momento della pressione del bottone d'invio, la funzione legge i dati dalla pagina di HTML e ottiene
+        # username e password
         u = request.form["username"]
         p = request.form["password"]
 
         try:
+            # Utilizzo della callback. Formatto la stringa come 'username#password' al fine di passare una stringa sola
+            if load_user(f"{u}#{p}") is None:
+                # Lo user richiesto non esiste
+                raise RuntimeError()
+            # La funzione load_user ha individuato delle credenziali valide. Procede al login
             cookiename = 'attempts'
             cookievalue = request.cookies.get(cookiename)
             # TODO: finire
@@ -223,11 +258,16 @@ def login() -> str:
             return redirect(url_for("request_url"))  # noqa, Ritorna comunque una string alla fine del redirect
 
         except RuntimeError as RT:
+            # Riempimento dei parametri di errore. Verranno messi in display sulla pagina web
             error = True
             reason = f"Data for user {u} does not exist"
             log(reason)
 
+    # Se siamo qui o la pagina è appena stata aperta o si è verificato un errore
     return render_template("loginpage.html", error=error, reason=reason)
+
+
+# -------------------------------------------------------------------------------------------------------------------- #
 
 
 if __name__ == '__main__':
