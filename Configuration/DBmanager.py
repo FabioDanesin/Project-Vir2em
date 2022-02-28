@@ -326,7 +326,7 @@ class DBmanager:
         finally:
             return result
 
-    def lockUser(self, username, password) -> None:
+    def lock_user(self, username, password) -> None:
         """
         Funzione per bloccare le credenziali di uno user dopo aver raggiunto un numero di tentativi massimi durante il
         login. Se la coppia username, password non esiste nella tabella delle credenziali del database, i dati non
