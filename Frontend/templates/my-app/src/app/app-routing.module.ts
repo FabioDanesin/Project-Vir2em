@@ -3,9 +3,9 @@ import { RouterModule, Routes } from '@angular/router';
 
 //import per le pagine create da noi
 import { LoginComponent } from './login/login.component';
-import { DashboardComponent } from './dashboard/dashboard.component';
 import { TableComponent } from './table/table.component';
 import { StoricoComponent } from './storico/storico.component';
+import { DashboardComponent } from './dashboard/dashboard.component';
 
 const routes: Routes = [ 
   { path: '', redirectTo: '/login', pathMatch: 'full' }, //per dichiarare che come pagina prinicipale voglio quella di login
