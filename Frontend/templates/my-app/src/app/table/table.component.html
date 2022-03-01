@@ -20,19 +20,22 @@
         </table>   
     </mat-drawer>
 
-    <!--esempi di grafici-->
+    <!--tipologie di graifco dinammico-->
     <div class="page-wrapper" align="center">
+        <!--prova dinamica con funzione che genera numeri random ogni secondo con stockchart-->
         <mat-card class=containergrafico style="background-color: cyan;" *ngIf="buttonClicked3">
-            <mat-card-title align="left">Prova dinamica che si aggiorna da solo ogni secondo</mat-card-title>
+            <mat-card-title align="left">Prova dinamica con funzione che genera numeri random ogni secondo con stockchart</mat-card-title>
             <mat-card-content>
                 <highcharts-chart
                     [Highcharts] = "highcharts3" 
+                    [constructorType]="'stockChart'"                    
                     [options] = "chartOptions3">
                 </highcharts-chart>
             </mat-card-content>
         </mat-card>
+        <!--prova dinamica a istogramma e csv-->
         <mat-card class=containergrafico style="background-color: red;" *ngIf="buttonClicked4">
-            <mat-card-title align="left">Prova dinamica istogramma</mat-card-title>
+            <mat-card-title align="left">Prova dinamica istogramma e csv</mat-card-title>
             <mat-card-content>
                 <highcharts-chart
                     [Highcharts] = "highcharts4" 

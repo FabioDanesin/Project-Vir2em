@@ -1,6 +1,23 @@
 import { Component, OnInit } from '@angular/core';
-import * as Highcharts from 'highcharts';
+import * as Highcharts from 'highcharts/highstock';
 import HC_data from 'highcharts/modules/data';
+import HC_stock from 'highcharts/modules/stock';
+import HC_exporting from 'highcharts/modules/exporting';
+import HIndicatorsAll from "highcharts/indicators/indicators-all";
+import HDragPanes from "highcharts/modules/drag-panes";
+import HAnnotationsAdvanced from "highcharts/modules/annotations-advanced";
+import HPriceIndicator from "highcharts/modules/price-indicator";
+import HFullScreen from "highcharts/modules/full-screen";
+import HStockTools from "highcharts/modules/stock-tools";
+
+HIndicatorsAll(Highcharts);
+HDragPanes(Highcharts);
+HAnnotationsAdvanced(Highcharts);
+HPriceIndicator(Highcharts);
+HFullScreen(Highcharts);
+HStockTools(Highcharts);
+HC_exporting(Highcharts); 
+HC_stock(Highcharts);
 HC_data(Highcharts);
 
 @Component({
@@ -18,7 +35,7 @@ export class TableComponent implements OnInit {
    public buttonClicked4: boolean = false;
    public onButtonClick4() { this.buttonClicked4 = !this.buttonClicked4; }
 
-   //grafico 3: prova dinamica che si aggiorna da solo ogni seondo
+   //grafico 3: con funzione che genera numeri random ogni secondo con stockchart
    highcharts3 = Highcharts;
    chartOptions3: Highcharts.Options = {
       chart : {
@@ -26,94 +43,71 @@ export class TableComponent implements OnInit {
          height: 400,
          width: 800,
          events: {
-            load: function () {
-               // set up the updating of the chart each second
-               var series = this.series[0];
-               setInterval(function () {
-                  var x = (new Date()).getTime(), // current time
-                  y = Math.random();
-                  series.addPoint([x, y], true, true);
-               }, 1000);
+            load: function() {
+                var series1 = this.addSeries({
+                  type: 'spline',
+                  data: [
+                    [(new Date()).getTime(), 5000]
+                  ]
+                });
+                (function loop() {
+                  var rand = Math.round(Math.random() * 100) + 500;
+                  setTimeout(function() {
+                    var timeStamp = (new Date()).getTime();
+                    var shift1 = (timeStamp - series1.data[0].x) > 50000;
+                    var y1 = 5000 + Math.round(Math.random() * 100);
+                    series1.addPoint([timeStamp, y1], true, shift1);
+                    loop();
+                  }, rand);
+                }());
+                }
+              }
+            },
+            title: {
+              text: 'Live random data'
+            },
+            xAxis: {
+              type: 'datetime',
+              tickPixelInterval: 150
+            },
+            yAxis: {
+              plotLines: [{
+                value: 0,
+                width: 1, 
+                color: '#808080'
+              }]
+            },
+            tooltip: {
+              enabled: false
+            },
+            legend: {
+              enabled: false
+            },
+            exporting: {
+              enabled: false
             }
-         }
-      },
-      title : {
-         text: 'Live random data'   
-      },   
-      xAxis : {
-         type: 'datetime',
-         tickPixelInterval: 150
-      },
-      yAxis : {
-         title: {
-            text: 'Value'
-         },
-         plotLines: [{
-            value: 0,
-            width: 1,
-            color: '#808080'
-         }]
-      },
-      tooltip: {
-         formatter: function () {
-            return '<b>' + this.series.name + '</b><br/>' +
-            Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
-            Highcharts.numberFormat(this.y, 2);
-         }
-      },
-      plotOptions: {
-         area: {
-            pointStart: 1940,
-            marker: {
-               enabled: false,
-               symbol: 'circle',
-               radius: 2,
-               states: {
-                  hover: {
-                     enabled: true
-                  }
-               }
-            }
-         }
-      },
-      legend: {
-         enabled: false
-      },
-      exporting : {
-         enabled: false
-      },
-      series : [{
-         name: 'Random data',
-         type: 'spline',
-         data: (function () {
-            var data = [],time = (new Date()).getTime(),i;
-            for (i = -19; i <= 0; i += 1) {
-               data.push({
-                  x: time + i * 1000,
-                  y: Math.random()
-               });
-            }
-            return data;
-         }())    
-      }]
    }
 
-   //grafico 4: prova dinamica a istogramma
+   //grafico 4: prova dinamica a istogramma e csv
    highcharts4 = Highcharts;
    chartOptions4: Highcharts.Options = { 
-      chart: {
-         type: 'bar',
-         height: 600
-     },
-     title: {
-         text: 'Server Monitoring Demo'
-     },
-     legend: {
-         enabled: false
-     },
-     subtitle: {
-         text: 'Instance Load'
-     },
+        chart: {
+            type: 'bar',
+            height: 600,
+            width: 800,
+        },
+        title: {
+            text: 'Server Monitoring Demo'
+        },
+        legend: {
+            enabled: false
+        },
+        exporting: {
+            enabled: false
+        },
+        subtitle: {
+            text: 'Instance Load'
+        },
         data: {
             csvURL: 'https://demo-live-data.highcharts.com/vs-load.csv',
             enablePolling: true,

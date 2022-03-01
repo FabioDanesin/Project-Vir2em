@@ -1,21 +1,27 @@
 <div align="center">
+    <!--tre tipologie di grafico statico:-->
+    <!-- grafico linea-->
     <mat-card class=containergrafico>
-        <mat-card-title align="left">Prova statica 1</mat-card-title>
+        <mat-card-title align="left">Prova statica linea 1</mat-card-title>
         <mat-card-content>
-            <highcharts-chart
-                [Highcharts] = "highcharts1" 
-                [options] = "chartOptions1">
+            <highcharts-chart [Highcharts]="highcharts1" [options]="chartOptions1">
             </highcharts-chart>
         </mat-card-content>
     </mat-card>
+    <!-- grafico istogramma-->
     <mat-card class=containergrafico>
-        <mat-card-title align="left">Prova statica 2</mat-card-title>
+        <mat-card-title align="left">Prova statica istogramma 2</mat-card-title>
         <mat-card-content>
-            <highcharts-chart
-                [Highcharts] = "highcharts2" 
-                [options] = "chartOptions2">
+            <highcharts-chart [Highcharts]="highcharts2" [options]="chartOptions2">
             </highcharts-chart>
         </mat-card-content>
-        
+    </mat-card>
+    <!-- grafico stockchart e json-->
+    <mat-card class=containergrafico>
+        <mat-card-title align="left">Prova statica stockchart e json 3</mat-card-title>
+        <mat-card-content>
+            <highcharts-chart [Highcharts]="highcharts5" [constructorType]="'stockChart'" [options]="chartOptions5">
+            </highcharts-chart>
+        </mat-card-content>
     </mat-card>
 </div>
