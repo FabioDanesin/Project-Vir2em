@@ -1,7 +1,5 @@
 import datetime
-import os
-import pathlib
-import threading
+import typing
 from random import Random
 from typing import Dict, List, Optional
 
@@ -138,6 +136,35 @@ def get_connection_root():
 # bycrypt = Bcrypt(app)
 
 
+def setcookie(key: str, value: typing.Any, resp=None) -> None:
+    """
+    Funzione wrapper per il setting di un cookide dati la sua chaive e il suo valore. Opzionalmente è possibile passare
+    un oggetto di make_response() per alleggerire il lavoro del garbage collector.
+
+    :param key: La chiave del cookie
+    :param value: Valore da salvare nel cookie
+    :param resp: Istanza opzionale di make_response()
+    :return: None
+    """
+    if resp is None:
+        resp = make_response()
+    resp.set_cookie(key, str(value), secure=True, httponly=False, samesite="Strict")
+
+
+def deletecookie(key, resp=None) -> None:
+    """
+    Funzione wrapper per la cancellazione del cookie dalla macchina client connessa. Se il cookie non esiste, fallisce
+    senza lanciare un eccezione o errore.
+
+    :param key: Chiave del cookie da eliminare.
+    :param resp: Istanza opzionale di make_response.
+    :return: None
+    """
+    if resp is None:
+        resp = make_response()
+    resp.delete_cookie(key, secure=True, httponly=False, samesite="Strict")
+
+
 #
 # Routes
 #
@@ -169,7 +196,11 @@ def parse_request(jsonrequest: str):
             defaults['begin_hour'],
             defaults['end_hour']
         )
-        # TODO: finire
+        list_json = dumps(data)
+        r = requests.post(
+            '',  # TODO: definire URL per posting di dati da mettere su grafico.
+            json=list_json
+        )
 
     except KeyNames as k:
         print(f"Key error detected : {k}")
@@ -183,7 +214,7 @@ def request_url():
         "Dataname": "NAME",
         "Datavalue": "231"
     }
-
+    print(request.cookies)
     r = requests.post(
         f"{get_connection_root()}/datarequest",
         json=datadict
@@ -214,16 +245,34 @@ def load_user(uid: str) -> Optional[User]:
     :return: Istanza della classe User se il login ha successo, None altrimenti.
     """
     splitted = uid.split("#")
-    u = splitted[0]
-    p = splitted[1]
-    print(u)
-    print(p)
+    cookiekey = 'attempts'  # Chiave per il cookie dei tentativi di accesso. Non è dipendente da password.
+    u = splitted[0]  # Username non hashato.
+    p = splitted[1]  # Password non hashata.
+    resp = make_response()  # Response del server.
 
     try:
+        # Controllo credenziali
         credentials = db.check_credentials(u, p)
+
+        # Controllo superato con successo. Lo user può accedere al sito.
+        deletecookie(cookiekey, resp)
+
         return User(credentials["ID"])
 
     except RuntimeError:
+        # Accaduto un errore di qualche tipo. Incremento del cookie dei tentativi.
+        c = request.cookies.get(cookiekey, default='0', type=int)
+
+        if c == MAXATTEMPTS:
+            # Tentativi massimi raggiunti. Se lo username è presente nel database, quello username viene considerato
+            # compromesso e dovrà essere sbloccato in base alle politiche dell'azienda.
+            db.lockUser(u, p)
+            deletecookie(cookiekey, resp)
+
+        else:
+            # Incrementa.
+            setcookie(cookiekey, c + 1, resp)
+
         return None
 
 
@@ -251,16 +300,15 @@ def login() -> str:
                 # Lo user richiesto non esiste
                 raise RuntimeError()
             # La funzione load_user ha individuato delle credenziali valide. Procede al login
-            cookiename = 'attempts'
-            cookievalue = request.cookies.get(cookiename)
-            # TODO: finire
-
+            load_user(f"{u}#{p}")
             return redirect(url_for("request_url"))  # noqa, Ritorna comunque una string alla fine del redirect
 
-        except RuntimeError as RT:
+        except RuntimeError as rt:
             # Riempimento dei parametri di errore. Verranno messi in display sulla pagina web
             error = True
-            reason = f"Data for user {u} does not exist"
+            reason = rt.__str__()
+            # TODO: rafforzare procedura anti bruteforcing con database
+
             log(reason)
 
     # Se siamo qui o la pagina è appena stata aperta o si è verificato un errore
