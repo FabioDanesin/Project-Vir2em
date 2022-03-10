@@ -1,3 +1,6 @@
+import numbers
+import typing
+
 import opcua
 from opcua import Client, Node
 from typing import List
@@ -23,7 +26,6 @@ class Monitor:
     """
 
     def __init__(self, logfile_name="Monitor Log File"):
-
         path = parsed_data.get(KeyNames.logs)
         self.__logger__: Logger = Logger(path, logfile_name, Filetype.LOCAL)
 
@@ -45,19 +47,30 @@ class Monitor:
 
             # Estrazione delle variabili di stato del controller
             self.__controller_state_variables__: List[opcua.Node] = self.__obj_node__.get_children()
+
+            # Setup delle variabili di controllo / shortcut per update di stato del monitor.
             self.__variables__ = None
+            self.__variables_root_node__ = None
+            self.__data_root__ = None
 
             # Ottenimento dei parametri dal controller
             for data in self.__controller_state_variables__:
                 # Individua il nodo che contiene il nome del controller
                 if data.get_browse_name().Name == controllername:
+                    self.__data_root__ = data
 
                     # Lo spazio delle GlobalVars è hardcoded con questo nome
-                    for plcvars in data.get_children():
+                    for plcvars in self.__data_root__.get_children():
                         if plcvars.get_browse_name().Name == "GlobalVars":
-                            self.__variables__: List[opcua.Node] = plcvars.get_children()
+                            self.__variables_root_node__ = plcvars
+                            self.__variables__: List[opcua.Node] = self.__variables_root_node__.get_children()
+                            break
+
+                if self.__variables_root_node__ is not None:
+                    break
 
             if self.__variables__ is None:
+                # Errore: Il controller non esiste sull'indirizzo passato.
                 self.__logger__.write("Errore: nome del controller non trovato")
                 raise RuntimeError()
 
@@ -66,7 +79,6 @@ class Monitor:
                 self.__logger__.__write__(f"\t{str(a)}\n")
 
         except Exception:
-
             # Se a qualsiasi punto dovesse fallire il client si disconnetterà automaticamente
             self.__logger__.write("Errore di connessione")
             self.__client__.disconnect()
@@ -99,6 +111,13 @@ class Monitor:
         if instance is None:
             instance = Monitor()
         return instance
+
+    def refresh_variables(self) -> None:
+        """
+        Funzione per l'update dei node presenti nel PLC.
+        :return: None
+        """
+        self.__variables__ = self.__variables_root_node__.get_children()
 
     def __del__(self):
         self.__client__.disconnect()
