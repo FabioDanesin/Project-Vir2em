@@ -1,6 +1,5 @@
 import datetime
 import typing
-from random import Random
 from typing import Dict, List, Optional
 
 import requests
@@ -15,13 +14,13 @@ from Configuration import KeyNames
 from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
 from Parser import get_parsed_data
 from Logs.Logger import Filetype, Logger
+from Utils import hash_str
+from Frontend.Common import ReaderThread
 
 # Istanza del parser
 parserdata = get_parsed_data()
 # cartella delle pagine del frontend
 TEMPLATE_DIR = "templates"
-# Attualmente non impiegato
-DEFAULT_NONCE_LENGTH = 128
 
 #
 # Utilities
@@ -29,8 +28,7 @@ DEFAULT_NONCE_LENGTH = 128
 
 db = DBmanager.get_instance()
 # monitor = Control.Monitor.Monitor.get_instance()
-# attualmente non impiegato
-random = Random()
+
 # Nome del file dei log
 Logname = "FlaskApplicationLog"
 # Crea un file di log sul percorse dei log recuperando il path della cartella di log da ProjectData.txt
@@ -39,18 +37,6 @@ logfile = Logger(parserdata.get(KeyNames.logs), Logname, Filetype.LOCAL)
 
 def log(s):
     logfile.write(s)
-
-
-# Al momento non usata (usata per comunicazione con scramp)
-def generate_nonce(length=DEFAULT_NONCE_LENGTH):
-    s = ""
-
-    for a in range(length):
-        i = random.randint(33, 126)  # Caratteri contemplati da UTF-8 che non sono caratteri speciali.
-        charachter = chr(i)
-        s = s + charachter
-
-    return s
 
 
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -123,7 +109,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 
-# ---------------------------------------- #
+# -------------------------------------------------------------------------------------------------------------------- #
 
 # -------------------------------------------------------------------------------------------------------------------- #
 def get_connection_root():
@@ -175,6 +161,7 @@ def deletecookie(key, resp=None) -> None:
 @app.route("/datarequest")
 def parse_request(jsonrequest: str):
     year = datetime.datetime.now().year
+
     defaults = {
         "begin_day": f"{year}-01-01",
         "end_day": f"{year}-12-31",
@@ -196,6 +183,7 @@ def parse_request(jsonrequest: str):
             defaults['begin_hour'],
             defaults['end_hour']
         )
+
         list_json = dumps(data)
         r = requests.post(
             '',  # TODO: definire URL per posting di dati da mettere su grafico.
@@ -245,33 +233,26 @@ def load_user(uid: str) -> Optional[User]:
     :return: Istanza della classe User se il login ha successo, None altrimenti.
     """
     splitted = uid.split("#")
-    cookiekey = 'attempts'  # Chiave per il cookie dei tentativi di accesso. Non è dipendente da password.
+
     u = splitted[0]  # Username non hashato.
     p = splitted[1]  # Password non hashata.
-    resp = make_response()  # Response del server.
+    ip = splitted[2]  # Indirizzo IP.
 
     try:
         # Controllo credenziali
         credentials = db.check_credentials(u, p)
 
-        # Controllo superato con successo. Lo user può accedere al sito.
-        deletecookie(cookiekey, resp)
-
+        # Il controllo è stato superato.
         return User(credentials["ID"])
 
     except RuntimeError:
-        # Accaduto un errore di qualche tipo. Incremento del cookie dei tentativi.
-        c = request.cookies.get(cookiekey, default='0', type=int)
 
-        if c == MAXATTEMPTS:
-            # Tentativi massimi raggiunti. Se lo username è presente nel database, quello username viene considerato
-            # compromesso e dovrà essere sbloccato in base alle politiche dell'azienda.
-            db.lockUser(u, p)
-            deletecookie(cookiekey, resp)
+        # Una parte della procedura ha lanciato un errore. Loggo il tentativo di connessione a database e a logfile e
+        # ritorno None.
+        db.log_connection_attempt(ip, hash_str(u), hash_str(p))
 
-        else:
-            # Incrementa.
-            setcookie(cookiekey, c + 1, resp)
+        log(f"User at ip {ip} tried accessing the account at username {u}, which is registered as {hash_str(u)} in the "
+            f"database.")
 
         return None
 
@@ -286,28 +267,28 @@ def login() -> str:
     error = False  # Se ai è verificato un errore
     reason = ""  # Che errore si è verificato
 
-    error = False
-    reason = ""
     if request.method == "POST":
         # Al momento della pressione del bottone d'invio, la funzione legge i dati dalla pagina di HTML e ottiene
         # username e password
         u = request.form["username"]
         p = request.form["password"]
+        ipaddr = request.remote_addr
 
         try:
             # Utilizzo della callback. Formatto la stringa come 'username#password' al fine di passare una stringa sola
-            if load_user(f"{u}#{p}") is None:
+            if load_user(f"{u}#{p}#{ipaddr}") is None:
+
                 # Lo user richiesto non esiste
-                raise RuntimeError()
+                raise RuntimeError("Username o password errati")
+
             # La funzione load_user ha individuato delle credenziali valide. Procede al login
-            load_user(f"{u}#{p}")
             return redirect(url_for("request_url"))  # noqa, Ritorna comunque una string alla fine del redirect
 
         except RuntimeError as rt:
+
             # Riempimento dei parametri di errore. Verranno messi in display sulla pagina web
             error = True
-            reason = rt.__str__()
-            # TODO: rafforzare procedura anti bruteforcing con database
+            reason = str(rt)
 
             log(reason)
 
@@ -317,11 +298,16 @@ def login() -> str:
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
-
-if __name__ == '__main__':
-    sslcont = ('cert.pem', 'key.pem')
+def init():
     app.debug = True
     app.template_folder = './Frontend/templates'
+
+    ReaderThread().start()
+
+
+if __name__ == '__main__':
+    init()
+    sslcont = ('cert.pem', 'key.pem')
     if SSL:
         app.run(debug=True, host=HOST, port=PORT, ssl_context=sslcont)
     else:
