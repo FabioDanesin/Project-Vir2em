@@ -277,7 +277,6 @@ def login() -> str:
         try:
             # Utilizzo della callback. Formatto la stringa come 'username#password' al fine di passare una stringa sola
             if load_user(f"{u}#{p}#{ipaddr}") is None:
-
                 # Lo user richiesto non esiste
                 raise RuntimeError("Username o password errati")
 
@@ -294,6 +293,16 @@ def login() -> str:
 
     # Se siamo qui o la pagina è appena stata aperta o si è verificato un errore
     return render_template("loginpage.html", error=error, reason=reason)
+
+
+@app.route("/dashboard/table")
+def table():
+    return render_template("/dashboard/table")
+
+
+@app.route("/dashboard/storico")
+def hystory():
+    return render_template("/dashboard/storico")
 
 
 # -------------------------------------------------------------------------------------------------------------------- #
