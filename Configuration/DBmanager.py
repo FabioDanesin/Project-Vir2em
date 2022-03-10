@@ -1,11 +1,11 @@
 import datetime
-import hashlib
 import typing
 
-from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_, update
+from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_, update, select
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.ext.automap import automap_base
 
+from Utils import *
 from Configuration import KeyNames
 from Logs.Logger import Logger, Filetype
 from Parser import get_parsed_data
@@ -17,6 +17,7 @@ def get_from_parsed_data(name):
     return parsed_data.get(name)
 
 
+# Tipo del DB
 db_type = get_from_parsed_data(KeyNames.db_type)
 
 # Nome del login su postgresql, deve anche essere il nome del database
@@ -54,11 +55,6 @@ def make_data():
     return d_eng, d_con, d_insp, d_base
 
 
-# Funzione di shortcut per hashing di stringhe
-def hash_str(s: str):
-    return hashlib.sha256(s.encode()).hexdigest()
-
-
 instance = None
 
 
@@ -81,9 +77,14 @@ class DBmanager:
         self.__user_data_connection__ = self.__user_data_engine__.connect()
         self.__plc_data_connection__ = self.__plc_data_engine__.connect()
 
-        # Questa classe serve per mantenere tutti di dati parzialmente parsati prima di caricarli sul database
+        # MetaData contiene tutti i dati del database, come tabelle, viste, index ecc. e tutti i dati inseriti al loro
+        # interno.
         self.__user_metadata__ = MetaData(self.__user_data_connection__)
         self.__plc_metadata__ = MetaData(self.__plc_data_connection__)
+
+        # Utilizzo di reflection per ottenere le tabelle già presenti nel database.
+        self.__user_metadata__.reflect()
+        self.__user_metadata__.reflect()
 
         # Questo campo memorizzato sotto forma di dizionario è un contenitore di tutti i dati disponibili nel database.
         # Le tabelle sono memorizzate secondo una coppia chiave - valore. Chiave sarà una stringa standard e il valore
@@ -106,32 +107,102 @@ class DBmanager:
 
         # Pulla gli users
         users = self.__query_table__("users", metadata, engine)
+
         # Hasha la password. Il db contiene solo password hashate con SHA-256.
-        if hash:
-            hashed_name, hashed_password = hash_str(username), hash_str(password)
-        else:
-            hashed_name = username
-            hashed_password = password
+        hashed_name, hashed_password = hash_str(username), hash_str(password)
 
         for data in users:
+            login_attempts = self.__get_existing_table__(
+                'login_attempts',
+                self.__user_metadata__,
+                self.__user_data_engine__
+            )
+
+            login_data_used = self.__get_existing_table__(
+                'login_data_used',
+                self.__user_metadata__,
+                self.__user_data_engine__
+            )
 
             tname = data[1]  # Username
             tpassword = data[2]  # Password associata
-            islocked = data[8]  # Booleano per il blocco account. False=account libero, True=account bloccato
+            islocked = data[4]  # Booleano per il blocco account. False=account libero, True=account bloccato
 
             if hashed_name == tname and hashed_password == tpassword:
+                # L'account richiesto è bloccato. Ritorno errore.
                 if islocked:
-                    self.__logger__.write(f"WARNING:User {username} is a locked account")
+                    self.__logger__.write(f"WARNING: {username} tried accessing, but the account has been locked.")
                     raise RuntimeError(f"{username}'s account is locked. This incident will be reported")
 
                 self.__logger__.write(f"User {username} has logged")
+
+                statement1 = (
+                    login_attempts.delete().where(login_attempts.c['username'] == hashed_name)
+                )
+                statement2 = (
+                    login_data_used.delete().where(login_data_used.c['username'] == hashed_name)
+                )
+
+                self.__execute_user_data_operation__(statement1)
+                self.__execute_user_data_operation__(statement2)
+
                 return {
                     "ID": data[0],
                     "Name": data[1],
-                    "Password": data[2]
+                    "Password": data[2],
+                    "Permission": data[3]
+                    # 'Locked' è ovviamente False
                 }
 
+        # Arrivati a questo punto sappiamo che non esistono delle credenziali valide per U,P passati. Logghiamo il
+        # tentativo di login nel db e lanciamo un errore.
+
         raise SqlDataNotFoundError(f"Data for {username} not found")
+
+    def log_connection_attempt(self, con_id, username, password) -> None:
+        """
+        Aggiunge il tentativo fallito di connessione al DB. Il blocco dello user è fatto a livello del database.
+        :param con_id: ID di connessione. Può essere una stringa di qualsiasi tipo purchè consistente.
+        :param username: Username usato nel tentativo fallito.
+        :param password: Password usata nel tentativo fallito.
+        :return: None
+        """
+        # Chiavi delle tabelle interessate
+        attempts = 'login_attempts'
+        data_for_attempts = 'login_data_used'
+
+        # Esplicitazione parametri
+        meta = self.__user_metadata__
+        eng = self.__user_data_engine__
+
+        # Tabelle interessate
+        login_attempts = self.__get_existing_table__(attempts, meta, eng)
+        login_data = self.__get_existing_table__(data_for_attempts, meta, eng)
+
+        # Lista di 'connection_id' presenti in 'login_attempts'. La funzione map non ritorna una lista, ma va messo
+        # nel costruttore di lista.
+        id_list = list(map(lambda X: X[0], login_attempts.select().execute().fetchall()))
+
+        # La condizione nell'if compara il con_id passato con il contenuto della colonna 'connection_id' di
+        # 'login_attempts'.
+        if con_id in id_list:
+
+            # Se il con_id esiste nel DB, incrementiamo il contatore.
+            login_attempt_statement = login_attempts.update() \
+                .where(login_attempts.c['connection_id'] == con_id) \
+                .values(attempts=login_data.c['attempts'] + 1)
+        else:
+
+            # Se il con_id NON esiste, lo inseriamo.
+            login_attempt_statement = login_attempts.insert(values=(con_id, 0))
+
+        # Inserimento dello username e password associati al connection id.
+        # Non cambia in nessun caso
+        login_data_statement = login_data.insert(values=(con_id, username, password))
+
+        # Esecuzione degli statement.
+        self.__execute_user_data_operation__(login_attempt_statement)
+        self.__execute_user_data_operation__(login_data_statement)
 
     def select_all_in_table(self, tablename) -> typing.List:
         """
@@ -187,7 +258,6 @@ class DBmanager:
         """
         # Shortcutting
         engine = self.__plc_data_engine__
-        connection = self.__plc_data_connection__
         metadata = self.__plc_metadata__
 
         # Trasformo il dato in stringa e ottengo data e ora
@@ -325,23 +395,6 @@ class DBmanager:
 
         finally:
             return result
-
-    def lock_user(self, username, password) -> None:
-        """
-        Funzione per bloccare le credenziali di uno user dopo aver raggiunto un numero di tentativi massimi durante il
-        login. Se la coppia username, password non esiste nella tabella delle credenziali del database, i dati non
-        variano.
-        :param username: Username da lockare
-        :param password: Password da lockare
-        :return: None
-        """
-        # TODO: chiedere a Caiazza se usare solo lo username o meno
-        table = self.__get_existing_table__('users', self.__user_metadata__, self.__user_data_engine__)
-        statement = update(table) \
-            .where(and_(table.c['name'] == username, table.c['password'] == password)) \
-            .values(Locked=True)
-
-        self.__execute_user_data_operation__(statement)
 
 
 class SqlDataNotFoundError(RuntimeError):
