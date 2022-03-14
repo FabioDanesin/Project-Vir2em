@@ -10,11 +10,11 @@
 .container {
     width: 97vw;
     height: 100vh;
-  }
+}
   
-  .sidenav {
-    padding: 10px;
-  }
+.sidenav {
+    padding: 0.8em;
+}
 
 .page-wrapper {
     max-width: 100%;

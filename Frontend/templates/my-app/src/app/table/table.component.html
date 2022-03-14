@@ -1,19 +1,12 @@
 <!--separazione della pagina in due per la parte delle impostazioni e delle tabelle-->
-<mat-drawer-container class="container" align="right">
+<mat-drawer-container class="container" align="right" autosize>
     <!--parte impostazioni per le tabelle-->
-    <button type="button"  mat-icon-button (click)="drawer.toggle()" >
+    <button type="button" mat-icon-button (click)="drawer.toggle()">
         <mat-icon>settings</mat-icon>
     </button>
     <mat-drawer #drawer class="sidenav" mode="side" position="end" style="text-align: left;">
-        <!--parte per l scelta delle impostazioni-->
-        <h3>Impostazioni tabelle</h3> <!--TODO-->
-        <table>
-            <tr><mat-checkbox color="primary">TODO</mat-checkbox></tr>
-            <tr><mat-checkbox color="primary">TODO</mat-checkbox></tr> 
-        </table>
-        <hr color="white">
         <!--parte di selezione delle tabelle da mostrare-->
-        <h3>Selezione tabelle </h3> <!--DA SISTEMARE-->
+        <h3>Selezione tabelle</h3> <!--DA SISTEMARE-->
         <table>
             <tr><mat-checkbox (click)="onButtonClick3()" color="primary">Prova 3</mat-checkbox></tr> 
             <tr><mat-checkbox (click)="onButtonClick4()" color="primary">Prova 4</mat-checkbox></tr> 
