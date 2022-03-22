@@ -137,10 +137,10 @@ class DBmanager:
                 self.__logger__.write(f"User {username} has logged")
 
                 statement1 = (
-                    login_attempts.delete().where(login_attempts.c['username'] == hashed_name)
+                    login_data_used.delete().where(login_data_used.c['username'] == hashed_name)
                 )
                 statement2 = (
-                    login_data_used.delete().where(login_data_used.c['username'] == hashed_name)
+                    login_attempts.delete().where(login_attempts.c['username'] == hashed_name)
                 )
 
                 self.__execute_user_data_operation__(statement1)
@@ -186,13 +186,11 @@ class DBmanager:
         # La condizione nell'if compara il con_id passato con il contenuto della colonna 'connection_id' di
         # 'login_attempts'.
         if con_id in id_list:
-
             # Se il con_id esiste nel DB, incrementiamo il contatore.
             login_attempt_statement = login_attempts.update() \
                 .where(login_attempts.c['connection_id'] == con_id) \
-                .values(attempts=login_data.c['attempts'] + 1)
+                .values(attempts=(login_attempts.c['attempts'] + 1))
         else:
-
             # Se il con_id NON esiste, lo inseriamo.
             login_attempt_statement = login_attempts.insert(values=(con_id, 0))
 
@@ -200,9 +198,10 @@ class DBmanager:
         # Non cambia in nessun caso
         login_data_statement = login_data.insert(values=(con_id, username, password))
 
-        # Esecuzione degli statement.
-        self.__execute_user_data_operation__(login_attempt_statement)
+        # Esecuzione degli statement. Lo statement per login_data va eseguito prima dello statement per login_attempt
+        # per non violare il vincolo di FK.
         self.__execute_user_data_operation__(login_data_statement)
+        self.__execute_user_data_operation__(login_attempt_statement)
 
     def select_all_in_table(self, tablename) -> typing.List:
         """
