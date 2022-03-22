@@ -1,11 +1,12 @@
 import datetime
+import json
 import typing
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Any
 
 import requests
 # Danilo non toccare sta roba
 
-from flask import Flask, redirect, request, render_template, url_for, make_response, Response
+from flask import Flask, redirect, request, render_template, url_for, make_response, Response, jsonify
 from flask_login import login_required, current_user, LoginManager, UserMixin, logout_user
 from json import loads, dumps
 
@@ -15,7 +16,8 @@ from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
 from Parser import get_parsed_data
 from Logs.Logger import Filetype, Logger
 from Utils import hash_str
-from Frontend.Common import ReaderThread
+
+# from Frontend.Common import ReaderThread
 
 # Istanza del parser
 parserdata = get_parsed_data()
@@ -154,6 +156,16 @@ def deletecookie(key, resp=None) -> None:
 #
 # Routes
 #
+@login_required
+@app.route("/geturls")
+def urls():
+    dresp = {
+        "data": "/datarequest",
+        "test": "/sendrequest"
+    }
+
+    return jsonify(dresp)
+
 
 # Prende una request a Flask e richiede il DB per una variabile
 # TODO: terminare la richiesta al DB
@@ -202,12 +214,8 @@ def request_url():
         "Dataname": "NAME",
         "Datavalue": "231"
     }
-    print(request.cookies)
-    r = requests.post(
-        f"{get_connection_root()}/datarequest",
-        json=datadict
-    )
-    return str(r)
+
+    return jsonify(datadict)
 
 
 # Funzione di logout dell'utente da flask
@@ -225,7 +233,7 @@ def logout() -> Response:
 
 
 @login_manager.user_loader
-def load_user(uid: str) -> Optional[User]:
+def load_user(uid: str) -> Tuple[Optional[User], Optional[Any]]:
     """
     Callback di flask_login per il login dello user. Prende una singola stringa.
 
@@ -234,8 +242,8 @@ def load_user(uid: str) -> Optional[User]:
     """
     splitted = uid.split("#")
 
-    u = splitted[0]  # Username non hashato.
-    p = splitted[1]  # Password non hashata.
+    u = splitted[0]   # Username non hashato.
+    p = splitted[1]   # Password non hashata.
     ip = splitted[2]  # Indirizzo IP.
 
     try:
@@ -243,56 +251,69 @@ def load_user(uid: str) -> Optional[User]:
         credentials = db.check_credentials(u, p)
 
         # Il controllo è stato superato.
-        return User(credentials["ID"])
+        return User(credentials["ID"]), credentials
 
     except RuntimeError:
 
         # Una parte della procedura ha lanciato un errore. Loggo il tentativo di connessione a database e a logfile e
         # ritorno None.
+
         db.log_connection_attempt(ip, hash_str(u), hash_str(p))
 
         log(f"User at ip {ip} tried accessing the account at username {u}, which is registered as {hash_str(u)} in the "
             f"database.")
 
-        return None
+        return None, None
 
 
-@app.route("/", methods=['GET', 'POST'])
-@app.route("/login")
-def login() -> str:
+@app.route("/", methods=['POST'])
+@app.route("/login", methods=['POST'])
+def login() -> Response:
     """
     Funzione di login per Flask
     :return:
     """
-    error = False  # Se ai è verificato un errore
-    reason = ""  # Che errore si è verificato
 
-    if request.method == "POST":
-        # Al momento della pressione del bottone d'invio, la funzione legge i dati dalla pagina di HTML e ottiene
-        # username e password
-        u = request.form["username"]
-        p = request.form["password"]
-        ipaddr = request.remote_addr
+    # Al momento della pressione del bottone d'invio, la funzione legge i dati dalla POST e ottiene
+    # username e password
+    try:
+        if request.headers.get('Content-Type') == 'application/json':
+            body = request.get_json(force=True)  # Il json viene parsato automaticamente dal metodo.
+            u = body["username"]
+            p = body["password"]
 
-        try:
-            # Utilizzo della callback. Formatto la stringa come 'username#password' al fine di passare una stringa sola
-            if load_user(f"{u}#{p}#{ipaddr}") is None:
+            ipaddr: str = str(request.remote_addr)
+
+            # Utilizzo della callback. Formatto la stringa come 'username#password#ip' al fine di passare una
+            # stringa sola
+            user, response = load_user(f"{u}#{p}#{ipaddr}")
+            if user is None:
                 # Lo user richiesto non esiste
                 raise RuntimeError("Username o password errati")
 
             # La funzione load_user ha individuato delle credenziali valide. Procede al login
-            return redirect(url_for("request_url"))  # noqa, Ritorna comunque una string alla fine del redirect
 
-        except RuntimeError as rt:
+            return jsonify(response)  # noqa, Ritorna comunque una string alla fine del redirect
+        else:
+            raise RuntimeError(f"Questo URL accetta solo JSON, ma invece è stato dato "
+                               f"{request.headers.get('Content-Type')}")
+    except RuntimeError as rt:
+        # Riempimento dei parametri di errore. Verranno messi in display sulla pagina web
+        reason = str(rt)
+        responsedict = {"$error": reason}
+        log(reason)
 
-            # Riempimento dei parametri di errore. Verranno messi in display sulla pagina web
-            error = True
-            reason = str(rt)
+        return Response(
+            response=json.dumps(responsedict),
+            status=404
+        )
 
-            log(reason)
 
-    # Se siamo qui o la pagina è appena stata aperta o si è verificato un errore
-    return render_template("loginpage.html", error=error, reason=reason)
+@app.route("/debug", methods=["GET"])
+def deb():
+    html = request.get_json(True)
+
+    return str(html)
 
 
 @app.route("/dashboard/table")
@@ -309,9 +330,9 @@ def hystory():
 
 def init():
     app.debug = True
-    app.template_folder = './Frontend/templates'
+    app.template_folder = './Frontend/templates/my-app/src/app'
 
-    ReaderThread().start()
+    # ReaderThread().start()
 
 
 if __name__ == '__main__':
