@@ -48,7 +48,7 @@ PUSH_SLEEPTIME = 1
 class ReaderThread(threading.Thread):
 
     def __init__(self):
-        super().__init__()
+        super(ReaderThread, self).__init__()
         self.monitor = Monitor.Monitor.get_instance()
 
     def start(self) -> None:
