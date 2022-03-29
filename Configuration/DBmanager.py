@@ -91,7 +91,7 @@ class DBmanager:
         # sarà una lista di ennuple.
         self.__logger__.write("Inizializzazione avvenuta con successo")
 
-    def check_credentials(self, username: str, password: str) -> typing.Dict[str, str]:
+    def check_credentials(self, username: str, password: str, con_id: str) -> typing.Dict[str, str]:
         """
         Metodo per il login tramite TLS con username e password. L'account richiesto deve contenere lo username e
         password corrispondenti e non deve essere un account bloccato.
@@ -135,12 +135,13 @@ class DBmanager:
                     raise RuntimeError(f"{username}'s account is locked. This incident will be reported")
 
                 self.__logger__.write(f"User {username} has logged")
-
+                print(login_attempts.c.keys())
+                print(login_data_used.c.keys())
                 statement1 = (
-                    login_data_used.delete().where(login_data_used.c['username'] == hashed_name)
+                    login_data_used.delete().where(login_data_used.c['connection_id'] == con_id)
                 )
                 statement2 = (
-                    login_attempts.delete().where(login_attempts.c['username'] == hashed_name)
+                    login_attempts.delete().where(login_attempts.c['connection_id'] == con_id)
                 )
 
                 self.__execute_user_data_operation__(statement1)
