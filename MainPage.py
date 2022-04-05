@@ -2,27 +2,30 @@ import datetime
 import json
 import typing
 from typing import Dict, List, Optional, Tuple, Any
+import jwt
 
 import requests
 # Danilo non toccare sta roba
 
-from flask import Flask, redirect, request, render_template, url_for, make_response, Response, jsonify
+from flask import Flask, redirect, request, render_template, url_for, make_response, Response, jsonify, session
 from flask_login import login_required, current_user, LoginManager, UserMixin, logout_user
 from json import loads, dumps
+from functools import wraps
 
 # import Control.Monitor
+import Utils
 from Configuration import KeyNames
 from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
 from Parser import get_parsed_data
 from Logs.Logger import Filetype, Logger
-from Utils import hash_str
+from Utils import hash_str, generate_nonce
 
 # from Frontend.Common import ReaderThread
 
 # Istanza del parser
 parserdata = get_parsed_data()
 # cartella delle pagine del frontend
-TEMPLATE_DIR = "templates"
+TEMPLATE_DIR = "Frontend/templates"
 
 #
 # Utilities
@@ -76,9 +79,7 @@ class User(UserMixin):
         return False
 
     def __ne__(self, other):
-        if isinstance(other, User):
-            return not self.__eq__(other)
-        return False
+        return not self.__eq__(other)
 
 
 class UserAlreadyLoggedInException(RuntimeError):
@@ -89,6 +90,31 @@ class UserAlreadyLoggedInException(RuntimeError):
     def __str__(self):
         return self.msg
 
+def generate_token(name):
+    token = {'user' : name, 'exp' : str(datetime.datetime.utcnow() + datetime.timedelta(hours=1))}
+    print(token)
+    return {'token' : token}
+
+def validate_token(tok: bytes):
+    try:
+        # Token parsing. Potrebbe essere un token 'fabbricato', quindi si controlla prima.
+        t = jwt.decode(tok, app.config['SECRET_KEY'], algorithms=["HS256"])
+
+        username = t.get('user')
+        date = t.get('exp')
+
+        if datetime.datetime.utcnow() >= date:
+            r = RuntimeError()
+            r.__cause__ = "INVALID"
+            raise r
+        if username not in db.select_all_in_table('users'):
+            log("Username inseistente in token")
+            raise RuntimeError("Username inesistente")
+
+        return True
+
+    except jwt.exceptions.InvalidSignatureError:
+        return False
 
 # -------------------------------------------------------------------------------------------------------------------- #
 # Configurazione Flask App
@@ -103,9 +129,8 @@ MAXATTEMPTS = 5
 
 # Inizializzazione di flask -------------- #
 app = Flask(__name__)
-app.config['SECRET_KEY'] = "ASDASFCVERV2934282374"
+app.config['SECRET_KEY'] = generate_nonce(128)
 app.config['ENV'] = "development"
-app.template_folder = "./Frontend/templates"
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -120,9 +145,17 @@ def get_connection_root():
         root = root + 's'
     return f"{root}://{HOST}:{PORT}"
 
+def token_valid(token):
+    @wraps(token)
+    def validate(*args, **kwargs):
+        t = request.cookies.get("token")
+        if t is not None and validate_token(t):
+            return "LOL"
+        # TODO: finire
+    return validate
+
 
 # bycrypt = Bcrypt(app)
-
 
 def setcookie(key: str, value: typing.Any, resp=None) -> None:
     """
@@ -138,7 +171,6 @@ def setcookie(key: str, value: typing.Any, resp=None) -> None:
         resp = make_response()
     resp.set_cookie(key, str(value), secure=True, httponly=False, samesite="Strict")
 
-
 def deletecookie(key, resp=None) -> None:
     """
     Funzione wrapper per la cancellazione del cookie dalla macchina client connessa. Se il cookie non esiste, fallisce
@@ -151,6 +183,7 @@ def deletecookie(key, resp=None) -> None:
     if resp is None:
         resp = make_response()
     resp.delete_cookie(key, secure=True, httponly=False, samesite="Strict")
+
 
 
 #
@@ -166,11 +199,25 @@ def urls():
 
     return jsonify(dresp)
 
+@app.route("/setcookie", methods=["GET","POST"])
+def cookie():
+    if request.method == "POST":
+        payload = request.get_json(force=True)
+        setcookie("content", {"$content":payload})
+    else:
+        setcookie("content", {"$content":"defaultcookie"})
+    return "DONE"
+
+@app.route("/testcookie", methods=["GET","POST"])
+def test():
+    r = make_response()
+    r.set_cookie('content', 'content')
+    return str(request.cookies.get("content"))
 
 # Prende una request a Flask e richiede il DB per una variabile
 # TODO: terminare la richiesta al DB
 @login_required
-@app.route("/datarequest")
+@app.route("/datarequest", methods=["POST"])
 def parse_request(jsonrequest: str):
     year = datetime.datetime.now().year
 
@@ -188,18 +235,14 @@ def parse_request(jsonrequest: str):
             for key in timeframe.keys():
                 defaults[key] = timeframe[key]
 
-        data = db.get_variable_in_timeframe(
-            name,
-            defaults['begin_day'],
-            defaults['end_day'],
-            defaults['begin_hour'],
-            defaults['end_hour']
-        )
-
-        list_json = dumps(data)
-        r = requests.post(
-            '',  # TODO: definire URL per posting di dati da mettere su grafico.
-            json=list_json
+        return jsonify(
+            db.get_variable_in_timeframe(
+                name,
+                defaults['begin_day'],
+                defaults['end_day'],
+                defaults['begin_hour'],
+                defaults['end_hour']
+            )
         )
 
     except KeyNames as k:
@@ -229,6 +272,7 @@ def logout() -> Response:
     """
     logout_user()
     print("logout")
+    request.cookies.clear()
     return redirect(url_for("load_user"))
 
 
@@ -247,9 +291,10 @@ def load_user(uid: str) -> Tuple[Optional[User], Optional[Any]]:
     ip = splitted[2]  # Indirizzo IP.
 
     try:
+        u = hash_str(u)
+        p = hash_str(p)
         # Controllo credenziali
-        credentials = db.check_credentials(u, p)
-
+        credentials = db.check_credentials(u, p, ip)
         # Il controllo è stato superato.
         return User(credentials["ID"]), credentials
 
@@ -265,9 +310,7 @@ def load_user(uid: str) -> Tuple[Optional[User], Optional[Any]]:
 
         return None, None
 
-
-@app.route("/", methods=['POST'])
-@app.route("/login", methods=['POST'])
+@app.route("/login", methods=['GET','POST'])
 def login() -> Response:
     """
     Funzione di login per Flask
@@ -292,8 +335,15 @@ def login() -> Response:
                 raise RuntimeError("Username o password errati")
 
             # La funzione load_user ha individuato delle credenziali valide. Procede al login
+            token = generate_token(f"{hash_str(u)}#{hash_str(p)}")
 
-            return jsonify(response)  # noqa, Ritorna comunque una string alla fine del redirect
+            response = jwt.encode(
+                token,
+                app.config['SECRET_KEY'],
+                algorithm="HS256"
+            )
+            setcookie("Token", response, make_response())
+            return response  # noqa, Ritorna comunque una string alla fine del redirect
         else:
             raise RuntimeError(f"Questo URL accetta solo JSON, ma invece è stato dato "
                                f"{request.headers.get('Content-Type')}")
@@ -307,7 +357,6 @@ def login() -> Response:
             response=json.dumps(responsedict),
             status=404
         )
-
 
 @app.route("/debug", methods=["GET"])
 def deb():
@@ -325,12 +374,15 @@ def table():
 def hystory():
     return render_template("/dashboard/storico")
 
+@app.route("/")
+def m():
+    return render_template("index.html")
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
 def init():
     app.debug = True
-    app.template_folder = './Frontend/templates/my-app/src/app'
+    app.template_folder = './static'
 
     # ReaderThread().start()
 

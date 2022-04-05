@@ -96,8 +96,9 @@ class DBmanager:
         Metodo per il login tramite TLS con username e password. L'account richiesto deve contenere lo username e
         password corrispondenti e non deve essere un account bloccato.
 
-        :param username: Username richiesto
-        :param password: Password dell'account
+        :param username: Username richiesto.
+        :param password: Password dell'account.
+        :param con_id: ID connessione.
         :return: Dictionary con dettagli dello user(ID, Nome, Password)
         """
         self.__logger__.write(f"User {username} is attempting login")
@@ -107,9 +108,6 @@ class DBmanager:
 
         # Pulla gli users
         users = self.__query_table__("users", metadata, engine)
-
-        # Hasha la password. Il db contiene solo password hashate con SHA-256.
-        hashed_name, hashed_password = hash_str(username), hash_str(password)
 
         for data in users:
             login_attempts = self.__get_existing_table__(
@@ -128,20 +126,18 @@ class DBmanager:
             tpassword = data[2]  # Password associata
             islocked = data[4]  # Booleano per il blocco account. False=account libero, True=account bloccato
 
-            if hashed_name == tname and hashed_password == tpassword:
+            if username == tname and password == tpassword:
                 # L'account richiesto è bloccato. Ritorno errore.
                 if islocked:
                     self.__logger__.write(f"WARNING: {username} tried accessing, but the account has been locked.")
                     raise RuntimeError(f"{username}'s account is locked. This incident will be reported")
 
                 self.__logger__.write(f"User {username} has logged")
-                print(login_attempts.c.keys())
-                print(login_data_used.c.keys())
                 statement1 = (
-                    login_data_used.delete().where(login_data_used.c['connection_id'] == con_id)
+                    login_data_used.delete().where(login_data_used.c['connection_id'] == con_id) # Noqa
                 )
                 statement2 = (
-                    login_attempts.delete().where(login_attempts.c['connection_id'] == con_id)
+                    login_attempts.delete().where(login_attempts.c['connection_id'] == con_id) # Noqa
                 )
 
                 self.__execute_user_data_operation__(statement1)
