@@ -326,7 +326,7 @@ class DBmanager:
         # Wrappa l'esecuzione e ritorna la risposta dal DB
         result = self.__execute_user_data_operation__(statement)
 
-        return result.fetchall()  # .fetchall() garantisce che il tipo di ritorno sia corretto
+        return result.fetchall()  # fetchall() garantisce che il tipo di ritorno sia corretto
 
     @staticmethod
     def __get_existing_table__(name, metadata, engine) -> Table:
