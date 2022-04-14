@@ -1,8 +1,8 @@
 import os
 import pathlib
 
-from Configuration import KeyNames
-from Parser import get_parsed_data
+from Globals import KeyNames
+from Globals.Parser import get_parsed_data
 from Logs.Logger import Logger, Filetype
 
 connection = True

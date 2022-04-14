@@ -2,8 +2,8 @@ import datetime
 import enum
 import os
 
-from Configuration import KeyNames
-from Parser import get_parsed_data
+from Globals import KeyNames
+from Globals.Parser import get_parsed_data
 
 parsed_data = get_parsed_data()
 _path = parsed_data.get(KeyNames.logs)  # Path verso la cartella logs

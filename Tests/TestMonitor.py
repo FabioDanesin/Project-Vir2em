@@ -1,5 +1,5 @@
 from Control.Monitor import Monitor
-from Parser import get_parsed_data
+from Globals.Parser import get_parsed_data
 
 data = get_parsed_data()
 

@@ -2,10 +2,8 @@ import threading
 import time
 import typing
 
-import opcua
-
 from opcua import Node
-from Configuration import KeyNames
+from Globals import KeyNames
 from Control import Monitor, Actor
 from Configuration.DBmanager import DBmanager
 from Parser import get_parsed_data

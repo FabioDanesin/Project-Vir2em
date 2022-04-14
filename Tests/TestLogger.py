@@ -1,4 +1,4 @@
-import Parser
+from Globals import Parser
 from Logs import Logger
 
 data = Parser.get_parsed_data()

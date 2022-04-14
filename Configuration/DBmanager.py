@@ -1,14 +1,13 @@
 import datetime
 import typing
 
-from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_, update, select
+from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR, DATE, INTEGER, and_
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.ext.automap import automap_base
 
-from Utils import *
-from Configuration import KeyNames
+from Globals import KeyNames
 from Logs.Logger import Logger, Filetype
-from Parser import get_parsed_data
+from Globals.Parser import get_parsed_data
 
 parsed_data = get_parsed_data()
 

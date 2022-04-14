@@ -2,7 +2,7 @@ import os
 import pathlib
 
 instance = None
-filename = "Configuration/ProjectData.txt"
+filename = "../Configuration/ProjectData.txt"
 rootpath = pathlib.Path(__file__).parent.resolve().__str__()
 filepath = os.path.join(rootpath, filename)
 
