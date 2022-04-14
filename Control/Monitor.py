@@ -1,13 +1,10 @@
-import numbers
-import typing
-
 import opcua
 from opcua import Client, Node
 from typing import List
 
 from Logs.Logger import Logger, Filetype
-from Parser import get_parsed_data
-from Configuration import KeyNames
+from Globals.Parser import get_parsed_data
+from Globals import KeyNames
 
 parsed_data = get_parsed_data()
 
