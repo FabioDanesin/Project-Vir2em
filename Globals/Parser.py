@@ -1,7 +1,7 @@
 import os
 
 instance = None
-filename = "Configuration/ProjectData.txt"
+filename = "../Configuration/ProjectData.txt"
 rootpath = str(os.path.dirname(os.path.realpath(__file__)))
 filepath = os.path.join(rootpath, filename)
 
