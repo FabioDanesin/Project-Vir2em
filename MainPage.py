@@ -36,21 +36,25 @@ Logname = "FlaskApplicationLog"
 # Crea un file di log sul percorse dei log recuperando il path della cartella di log da ProjectData.txt
 logfile = Logger(parserdata.get(KeyNames.logs), Logname, Filetype.LOCAL)
 
+
 class ContentException(RuntimeError):
     """
     Classe wrapper semplice per incapsulamento e gestione di errori di contenuto generici per header di richieste, cookie
     eccetera.
     """
+
     def __init__(self, reason):
         self.__reason__ = reason
 
     def __str__(self):
-        return  self.__reason__
+        return self.__reason__
+
 
 def log(s):
     logfile.write(s)
 
-def generate_user_token(username: str, password: str)->bytes:
+
+def generate_user_token(username: str, password: str) -> bytes:
     """
     Mette insieme username e password e crea il token
     :param name: Username user che riceve il token
@@ -62,9 +66,9 @@ def generate_user_token(username: str, password: str)->bytes:
     validity = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
 
     payload = {
-        "username" : username,
-        "password" : password,
-        "valid_until" : str(validity.strftime("%s"))  # La stringa di UNIX timestamp
+        "username": username,
+        "password": password,
+        "valid_until": str(validity.strftime("%s"))  # La stringa di UNIX timestamp
     }
 
     return jwt.encode(
@@ -72,6 +76,7 @@ def generate_user_token(username: str, password: str)->bytes:
         key=app.config["SECRET_KEY"],
         algorithm="HS256"
     )
+
 
 def craft_basic_json_response(payload: typing.Any, status=200):
     """
@@ -88,7 +93,8 @@ def craft_basic_json_response(payload: typing.Any, status=200):
     response.headers["Encoding"] = "UTF-8"
     return response
 
-def token_required(function : typing.Callable):
+
+def token_required(function: typing.Callable):
     """
     Questa funzione cerca di validare la firma del token ricevuto. Si aspetta di trovarlo nell'header della request
     sotto il nome 'token'.
@@ -96,6 +102,7 @@ def token_required(function : typing.Callable):
     :param function: La funzione a cui applicare il decorator
     :return: None se il token è valido. Response con error altrimenti.
     """
+
     @wraps(function)
     def wrap(*args, **kwargs):
         try:
@@ -103,7 +110,7 @@ def token_required(function : typing.Callable):
             tok = request.headers.get('token')
             if tok is None:
                 # Token non inviato
-                return craft_basic_json_response({"$error":"Token assente"}, status=401)
+                return craft_basic_json_response({"$error": "Token assente"}, status=401)
 
             # Tento di decodificare il token secondo il metodo di encoding prestabilito.
             # Se dovesse essere stato parsato in modo scorretto per via di chiave / algoritmo errati, lancia
@@ -118,10 +125,9 @@ def token_required(function : typing.Callable):
             # La data passata deve essere in UNIX timestamp, che può essere ricreato con un semplice metodo
             date = datetime.datetime.fromtimestamp(int(date))
 
-
             if datetime.datetime.utcnow() >= date:
                 # Token scaduto. Il frontend deve redirectare al login.
-                raise craft_basic_json_response({"$error":"OUTDATED TOKEN"}, status=401)
+                raise craft_basic_json_response({"$error": "OUTDATED TOKEN"}, status=401)
 
             # Il token è ancora in corso di validità. Controllo che username e password siano validi
             creds = db.check_credentials(username, password, request.remote_addr)
@@ -129,12 +135,14 @@ def token_required(function : typing.Callable):
             # Il controllo è stato concluso con successo. La funzione può procedere.
             return function(*args, **kwargs)
 
-        except (jwt.exceptions.InvalidSignatureError , RuntimeError) as invalid :
+        except (jwt.exceptions.InvalidSignatureError, RuntimeError) as invalid:
             # Trappo entrambe le exception in un singolo statement dato che la gestione dell'errore va fatta da frontend
             # e quindi la risposta è in entrambi i casi la stessa
-            return craft_basic_json_response({"$error" : str(invalid)}, status=401)
+            return craft_basic_json_response({"$error": str(invalid)}, status=401)
+
     # ritorno della funzione che fa da wrapper effettivo.
     return wrap
+
 
 def get_connection_root():
     # Debug
@@ -188,6 +196,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = '0f5d43f1ae8b1926f45c562c2adb7fffcea42fa5c95849d6589398cf768776b3'
 app.config['ENV'] = "development"
 
+
 # -------------------------------------------------------------------------------------------------------------------- #
 #                                                     Routes                                                           #
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -229,13 +238,14 @@ def parse_request():
     :param jsonrequest:
     :return:
     """
+
     def create_datetime_from_default(defstring: str):
         # Funzione per parse, estrazione e creazione di un datetime per comparare le date in modo più comprensibile
         splitstring = defstring.split("-")
-        year = splitstring[0]
-        month = splitstring[1]
-        day = splitstring[2]
-        return  datetime.datetime(year, month, day)
+        year = int(splitstring[0])
+        month = int(splitstring[1])
+        day = int(splitstring[2])
+        return datetime.datetime(year, month, day)
 
     # Anno corrente
     year = datetime.datetime.now().year
@@ -270,17 +280,17 @@ def parse_request():
                 raise ContentException("Formattazione delle date errato")
 
         values = db.get_variable_in_timeframe(
-                name,
-                defaults['begin_day'],
-                defaults['end_day'],
-                defaults['begin_hour'],
-                defaults['end_hour']
-            )
+            name,
+            defaults['begin_day'],
+            defaults['end_day'],
+            defaults['begin_hour'],
+            defaults['end_hour']
+        )
 
         return craft_basic_json_response(
             {
-                "name":name,
-                "values":values
+                "name": name,
+                "values": values
             }
         )
 
@@ -385,11 +395,12 @@ def login() -> Response:
             status=status
         )
 
+
 @app.route("/test_token_requirement", methods=["POST"])
 @token_required
 def tokentesting():
-
     return jsonify(request.get_json(force=True))
+
 
 @app.route("/")
 def test_communication():
