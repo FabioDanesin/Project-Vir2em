@@ -62,7 +62,7 @@ class Logger:
         :param __mode: modalità con cui si vuole aprire il file. Settata a 'write' di default.
         :return: FileIOWrapper al file richiesto, creato nel punto specificato da path.
         """
-        tmp = os.path.join(_path, "")
+        tmp = str(os.path.dirname(os.path.realpath(__file__)))
         finalpath = os.path.join(tmp, __ftype.value + " " + __time.__str__() + ":" + __name + ".txt")
         f = open(finalpath, __mode)
         return f
