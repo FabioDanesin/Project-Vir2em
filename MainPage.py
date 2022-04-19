@@ -11,7 +11,6 @@ from Configuration.DBmanager import DBmanager
 from Globals.Parser import get_parsed_data
 from Logs.Logger import Filetype, Logger
 from Utils import hash_str
-
 # import Control.Monitor
 # from Frontend.Common import ReaderThread
 
@@ -126,15 +125,13 @@ def token_required(function: typing.Callable):
             # La data passata deve essere in UNIX timestamp, che può essere ricreato con un semplice metodo
             date = datetime.datetime.fromtimestamp(int(date))
 
-            if datetime.datetime.utcnow() >= date:
-                # Token scaduto. Il frontend deve fare redirect al login.
+            if datetime.datetime.utcnow() >= date:  # Token scaduto. Il frontend deve fare redirect al login.
                 raise craft_basic_json_response({"$error": "OUTDATED TOKEN"}, status=401)
 
             # Il token è ancora in corso di validità. Controllo che username e password siano validi
             creds = db.check_credentials(username, password, request.remote_addr)
 
-            # Il controllo è stato concluso con successo. La funzione può procedere.
-            return function(*args, **kwargs)
+            return function(*args, **kwargs)  # Il controllo è stato concluso con successo. La funzione può procedere.
 
         except (jwt.exceptions.InvalidSignatureError, RuntimeError) as invalid:
             # Trappo entrambe le exception in un singolo statement dato che la gestione dell'errore va fatta da frontend
@@ -146,7 +143,6 @@ def token_required(function: typing.Callable):
 
 # Debug
 def get_connection_root():
-
     root = "http"
     if SSL:
         root = root + 's'
@@ -181,17 +177,12 @@ def deletecookie(key, resp=None) -> None:
     resp.delete_cookie(key, secure=True, httponly=False, samesite="Strict")
 
 
-# -------------------------------------------------------------------------------------------------------------------- #
-#                                                     Routes                                                           #
-# -------------------------------------------------------------------------------------------------------------------- #
-
 @app.route("/geturls")
 def urls():
     dresp = {
         "data": "/datarequest",
         "test": "/sendrequest"
     }
-
     return jsonify(dresp)
 
 
@@ -212,11 +203,9 @@ def test():
     return str(request.cookies.get("content"))
 
 
-
 @app.route("/datarequest", methods=["POST"])  # Prende una request a Flask e richiede il DB per una variabile
 @token_required
 def parse_request():
-
     # Funzione per parse, estrazione e creazione di un datetime per comparazione
     def create_datetime_from_default(defstring: str):
         splitstring = defstring.split("-")
