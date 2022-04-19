@@ -3,44 +3,46 @@ import json
 import typing
 from typing import Dict
 import jwt
-
-# Danilo non toccare sta roba
-
 from flask import Flask, redirect, request, url_for, make_response, Response, jsonify
 from json import loads
 from functools import wraps
-
-# import Control.Monitor
 from Globals import KeyNames
 from Configuration.DBmanager import DBmanager
 from Globals.Parser import get_parsed_data
 from Logs.Logger import Filetype, Logger
 from Utils import hash_str
 
+# import Control.Monitor
 # from Frontend.Common import ReaderThread
 
-# Istanza del parser
-parserdata = get_parsed_data()
-# cartella delle pagine del frontend
-TEMPLATE_DIR = "Frontend/templates"
+parserdata = get_parsed_data()  # Istanza del parser
+TEMPLATE_DIR = "Frontend/templates"  # cartella delle pagine del frontend
 
-# -------------------------------------------------------------------------------------------------------------------- #
-#                                                  Utilities                                                           #
-# -------------------------------------------------------------------------------------------------------------------- #
+# FLASK APP
+HOST = parserdata.get(KeyNames.site_ip)  # Ip del server in cui viene eseguito il server flask
+PORT = parserdata.get(KeyNames.site_port)  # Porta del server
+SSL = False
+MAXATTEMPTS = 5
+
+# Inizializzazione di flask -------------- #
+app = Flask(__name__)
+app.config['SECRET_KEY'] = '0f5d43f1ae8b1926f45c562c2adb7fffcea42fa5c95849d6589398cf768776b3'
+app.config['ENV'] = "development"
 
 db = DBmanager.get_instance()
 # monitor = Control.Monitor.Monitor.get_instance()
 
-# Nome del file dei log
-Logname = "FlaskApplicationLog"
-# Crea un file di log sul percorse dei log recuperando il path della cartella di log da ProjectData.txt
+# Crea un file di log sul percorse dei log recuperando
+# il path della cartella di log da ProjectData.txt
+Logname = "FlaskApplicationLog"  # Nome del file dei log
 logfile = Logger(parserdata.get(KeyNames.logs), Logname, Filetype.LOCAL)
 
 
 class ContentException(RuntimeError):
     """
-    Classe wrapper semplice per incapsulamento e gestione di errori di contenuto generici per header di richieste, cookie
-    eccetera.
+    Classe wrapper semplice per incapsulamento e gestione
+    di errori di contenuto generici per header di richieste,
+    cookie eccetera.
     """
 
     def __init__(self, reason):
@@ -54,23 +56,22 @@ def log(s):
     logfile.write(s)
 
 
+# Datetime non è codificabile in JSON.
+# Raggiro il problema trasformando datetime in una stringa timestamp
+# UNIX che non richiede sforzi particolari di serializzazione.
 def generate_user_token(username: str, password: str) -> bytes:
     """
     Mette insieme username e password e crea il token
-    :param name: Username user che riceve il token
-    :param payload: Password dello user che riceve il token
+    :param username: Username user che riceve il token
+    :param password: Password dello user che riceve il token
     :return: Bytes del token
     """
-    # Datetime non è codificabile in JSON. Raggiro il problema trasformando datetime in una stringa timestamp UNIX che
-    # non richiede sforzi particolari di serializzazione.
     validity = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-
     payload = {
         "username": username,
         "password": password,
         "valid_until": str(validity.strftime("%s"))  # La stringa di UNIX timestamp
     }
-
     return jwt.encode(
         payload,
         key=app.config["SECRET_KEY"],
@@ -126,7 +127,7 @@ def token_required(function: typing.Callable):
             date = datetime.datetime.fromtimestamp(int(date))
 
             if datetime.datetime.utcnow() >= date:
-                # Token scaduto. Il frontend deve redirectare al login.
+                # Token scaduto. Il frontend deve fare redirect al login.
                 raise craft_basic_json_response({"$error": "OUTDATED TOKEN"}, status=401)
 
             # Il token è ancora in corso di validità. Controllo che username e password siano validi
@@ -140,12 +141,12 @@ def token_required(function: typing.Callable):
             # e quindi la risposta è in entrambi i casi la stessa
             return craft_basic_json_response({"$error": str(invalid)}, status=401)
 
-    # ritorno della funzione che fa da wrapper effettivo.
-    return wrap
+    return wrap  # ritorno della funzione che fa da wrapper effettivo.
 
 
+# Debug
 def get_connection_root():
-    # Debug
+
     root = "http"
     if SSL:
         root = root + 's'
@@ -181,23 +182,6 @@ def deletecookie(key, resp=None) -> None:
 
 
 # -------------------------------------------------------------------------------------------------------------------- #
-#                                             Configurazione Flask App                                                 #
-# -------------------------------------------------------------------------------------------------------------------- #
-
-# Ip del server in cui viene eseguito il server flask
-HOST = parserdata.get(KeyNames.site_ip)
-# Porta del server
-PORT = parserdata.get(KeyNames.site_port)
-SSL = False
-MAXATTEMPTS = 5
-
-# Inizializzazione di flask -------------- #
-app = Flask(__name__)
-app.config['SECRET_KEY'] = '0f5d43f1ae8b1926f45c562c2adb7fffcea42fa5c95849d6589398cf768776b3'
-app.config['ENV'] = "development"
-
-
-# -------------------------------------------------------------------------------------------------------------------- #
 #                                                     Routes                                                           #
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -228,30 +212,21 @@ def test():
     return str(request.cookies.get("content"))
 
 
-# Prende una request a Flask e richiede il DB per una variabile
-@app.route("/datarequest", methods=["POST"])
+
+@app.route("/datarequest", methods=["POST"])  # Prende una request a Flask e richiede il DB per una variabile
 @token_required
 def parse_request():
-    """
 
-    :param token:
-    :param jsonrequest:
-    :return:
-    """
-
+    # Funzione per parse, estrazione e creazione di un datetime per comparazione
     def create_datetime_from_default(defstring: str):
-        # Funzione per parse, estrazione e creazione di un datetime per comparare le date in modo più comprensibile
         splitstring = defstring.split("-")
         year = int(splitstring[0])
         month = int(splitstring[1])
         day = int(splitstring[2])
         return datetime.datetime(year, month, day)
 
-    # Anno corrente
-    year = datetime.datetime.now().year
-    # Valori inline di default, se i valori nella richiesta dovessero essere assenti. Questi valori vengono sovrascritti
-    # dai valori già definiti dentro alla richiesta
-    defaults = {
+    year = datetime.datetime.now().year  # Anno corrente
+    defaults = {  # Valori inline di default
         "begin_day": f"{year}-01-01",
         "end_day": f"{year}-12-31",
         "begin_hour": "0",
@@ -263,15 +238,13 @@ def parse_request():
         if jsonrequest is None:  # Se il contenuto è di tipo sbagliato, viene lanciato un errore di contenuto
             raise ContentException(f"Atteso json per questo url ma ricevuto {str(request.content_type)}")
 
-        # Con questa sintassi, loaded_json_data viene eliminato finito lo statement
-        with loads(jsonrequest) as loaded_json_data:
+        with loads(jsonrequest) as loaded_json_data:  # loaded_json_data viene eliminato finito lo statement
             name = loaded_json_data['name']  # Nome della variabile
             timeframe: Dict = loaded_json_data['timeframe']  # Timeframe richiesto
             for key in timeframe.keys():
-                # Sostituisco le chiavi di default.
-                defaults[key] = timeframe[key]
+                defaults[key] = timeframe[key]  # Sostituisco le chiavi di default.
 
-            # Performo un check per assicurarmi che le date siano consistenti(begin <= end)
+            # Controllo che le date siano consistenti(begin <= end)
             begin_day = create_datetime_from_default(defaults["begin_day"])
             end_day = create_datetime_from_default(defaults["end_day"])
             begin_hour = int(defaults["begin_hour"])
@@ -314,8 +287,8 @@ def parse_request():
         )
 
 
-# Test di funzionamento di json (inutile al momento)
-@app.route("/sendrequest", methods=["GET"])
+# -----------------------------------------------------------------------------------------------------------------------
+@app.route("/sendrequest", methods=["GET"])  # Test di funzionamento di json (inutile al momento)
 def request_url():
     datadict = {
         "Dataname": "NAME",
@@ -325,10 +298,11 @@ def request_url():
     return jsonify(datadict)
 
 
-# Funzione di logout dell'utente da flask
+# -----------------------------------------------------------------------------------------------------------------------
+
 # TODO: da terminare e rivedere
 @app.route("/logout")
-def logout() -> Response:
+def logout() -> Response:  # Funzione di logout dell'utente da flask
     """
     Logout user
     :return:
@@ -346,26 +320,21 @@ def login() -> Response:
     :return:
     """
     status = 404
-    # Al momento della pressione del bottone d'invio, la funzione legge i dati dalla POST e ottiene
-    # username e password
-    try:
+
+    try:  # Al momento della pressione del bottone d'invio, la funzione legge la POST e ottiene username e password
         if request.headers.get('Content-Type') == 'application/json':
             body = request.get_json(force=True)  # Il json viene parsato automaticamente dal metodo.
             u = body["username"]
             p = body["password"]
             ipaddr: str = str(request.remote_addr)
 
-            # Utilizzo della callback. Formatto la stringa come 'username#password#ip' al fine di passare una
-            # stringa sola
             u = hash_str(u)
             p = hash_str(p)
 
-            # Controllo credenziali
-            credentials = db.check_credentials(u, p, ipaddr)
+            credentials = db.check_credentials(u, p, ipaddr)  # Controllo credenziali
             if credentials is None:
-                # Lo user richiesto non esiste. Registro il tentativo di connessione e ritorno un exception
-                db.log_connection_attempt(ipaddr, u, p)
-                raise RuntimeError("Username o password errati")
+                db.log_connection_attempt(ipaddr, u, p)  # Lo user richiesto non esiste.
+                raise RuntimeError("Username o password errati")  # log tentativo di connessione e ritorno un exception
 
             # La funzione check_credentials ha individuato delle credenziali valide.
             # Creo il token, contenente username e password hashati dello user e validità.
@@ -382,8 +351,9 @@ def login() -> Response:
             status = 400
             raise RuntimeError(f"Questo URL accetta solo JSON, ma invece è stato dato "
                                f"{request.headers.get('Content-Type')}")
-    except RuntimeError as rt:
-        # Riempimento dei parametri di errore. Verranno messi in display sulla pagina web
+
+    except RuntimeError as rt:  # Riempimento dei parametri di errore. Verranno messi in display sulla pagina web
+
         reason = str(rt)
         if app.debug:
             print(rt)
@@ -408,11 +378,8 @@ def test_communication():
     return jsonify(t)
 
 
-# -------------------------------------------------------------------------------------------------------------------- #
-
 def init():
     app.debug = True
-
     # ReaderThread().start()
 
 
