@@ -1,0 +1,7 @@
+__pycache__
+.idea
+.gitignore
+*.sh
+FlaskRun.*
+OpcUa.service 
+token.txt
