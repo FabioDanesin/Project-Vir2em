@@ -1,0 +1,42 @@
+<!--separazione della pagina in due per la parte delle impostazioni e delle tabelle-->
+<mat-drawer-container class="container" autosize>
+    <!--parte impostazioni per le tabelle-->
+    <div style="text-align: right; margin-top: 10px; margin-right: 10px;">
+        <button type="button"  mat-icon-button (click)="drawer.toggle()">
+            <mat-icon>settings</mat-icon>
+        </button>
+    </div>
+    <mat-drawer #drawer class="sidenav" mode="side" position="end"> 
+        <!--parte di selezione delle tabelle da mostrare-->
+       <h3>Selezione tabelle</h3> <!--DA SISTEMARE-->
+         <table>
+            <tr><mat-checkbox (click)="onButtonClick3()" color="primary">Prova 3</mat-checkbox></tr> 
+            <tr><mat-checkbox (click)="onButtonClick4()" color="primary">Prova 4</mat-checkbox></tr> 
+        </table>   
+    </mat-drawer>
+    
+    <!--tipologie di graifco dinamico-->
+    <div class="page-wrapper">
+        <!--prova dinamica con funzione che genera numeri random ogni secondo con stockchart  -->
+        <mat-card class="containergrafico" style="background-color: cyan;" *ngIf="buttonClicked3" >
+            <mat-card-title>Prova dinamica con funzione che genera numeri random ogni secondo con stockchart</mat-card-title>
+            <mat-card-content style="margin-inline: 12% 12%;">
+                    <highcharts-chart 
+                        [Highcharts] = "highcharts3" 
+                        [constructorType]="'stockChart'"                    
+                        [options] = "chartOptions3">
+                    </highcharts-chart>
+            </mat-card-content>
+        </mat-card>
+        <!--prova dinamica a istogramma e csv-->
+        <mat-card class=containergrafico style="background-color: red;" *ngIf="buttonClicked4">
+            <mat-card-title>Prova dinamica istogramma e csv</mat-card-title>
+            <mat-card-content style="margin-inline: 12% 12%;">
+                <highcharts-chart
+                    [Highcharts] = "highcharts4" 
+                    [options] = "chartOptions4">
+                </highcharts-chart>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</mat-drawer-container>

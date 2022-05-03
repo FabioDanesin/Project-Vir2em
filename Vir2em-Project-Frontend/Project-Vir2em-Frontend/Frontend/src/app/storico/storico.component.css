@@ -1,0 +1,10 @@
+.containergrafico{
+    margin-bottom: 15px;
+    margin-top: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    height: auto;
+    width: 800px;
+    border: 1px solid gray;
+    background-color: rgb(184, 169, 169);
+}

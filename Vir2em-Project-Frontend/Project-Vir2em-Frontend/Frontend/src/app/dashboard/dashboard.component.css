@@ -1,0 +1,19 @@
+.image-logo {
+  max-width: 105px;
+  max-height: 105px;
+  margin: 25px auto 20px;
+}
+
+.container {
+  height: 100%;
+  background-color: rgb(225, 225, 194);
+}
+
+.sidenav {
+  padding: 0;
+}
+
+.page-wrapper {
+  max-width: 100%;
+  margin: 0;
+}
