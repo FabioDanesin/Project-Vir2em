@@ -1,11 +1,17 @@
 FROM postgres:latest
 
-ENV DUMP=alldump.sql
-ENV DUMPDIR=/etc/var/dump
 
-RUN mkdir -p /${DUMPDIR}
-WORKDIR ${DUMPDIR}
+ENV DATA=/var/lib/postgres
+WORKDIR ${DATA}
+COPY ${DATA} .
 
-COPY ${DUMP} .
-
-RUN psql -U postgres -f ${DUMP}
+### VECCHIO
+#ENV DUMP=alldump.sql
+#ENV DUMPDIR=/etc/var/dump
+#
+#RUN mkdir -p /${DUMPDIR}
+#WORKDIR ${DUMPDIR}
+#
+#COPY ${DUMP} .
+#
+#RUN psql -U postgres -f ${DUMP}
