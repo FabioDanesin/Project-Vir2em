@@ -1,4 +1,4 @@
-from Backend.Configuration.DBmanager import DBmanager, SqlDataNotFoundError
+from Configuration.DBmanager import DBmanager, SqlDataNotFoundError
 
 import time
 begin_time = time.time()

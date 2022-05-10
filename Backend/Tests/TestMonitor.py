@@ -1,5 +1,5 @@
-from Backend.Control.Monitor import Monitor
-from Backend.Globals.Parser import get_parsed_data
+from Control.Monitor import Monitor
+from Globals.Parser import get_parsed_data
 
 data = get_parsed_data()
 

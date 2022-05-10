@@ -1,5 +1,5 @@
-from Backend.Globals import Parser
-from Backend.Logs import Logger
+from Globals import Parser
+from Logs import Logger
 
 data = Parser.get_parsed_data()
 

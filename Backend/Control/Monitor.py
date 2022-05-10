@@ -2,9 +2,9 @@ import opcua
 from opcua import Client, Node
 from typing import List
 
-from Backend.Logs.Logger import Logger, Filetype
-from Backend.Globals.Parser import get_parsed_data
-from Backend.Globals import KeyNames
+from Logs.Logger import Logger, Filetype
+from Globals.Parser import get_parsed_data
+from Globals import KeyNames
 
 parsed_data = get_parsed_data()
 

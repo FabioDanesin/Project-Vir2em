@@ -1,5 +1,6 @@
-from Backend.Control.Actor import Actor
-from Backend.Configuration.DBmanager import DBmanager
+from Control.Actor import Actor
+from Configuration.DBmanager import DBmanager
+
 RESET = 'Reset'
 NAME = "Vir2em_Fabio"
 PW = "linuxmanager"

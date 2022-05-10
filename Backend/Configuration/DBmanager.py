@@ -5,9 +5,9 @@ from sqlalchemy import MetaData, create_engine, inspect, Table, Column, VARCHAR,
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.ext.automap import automap_base
 
-from Backend.Globals import KeyNames
-from Backend.Logs.Logger import Logger, Filetype
-from Backend.Globals.Parser import get_parsed_data
+from Globals import KeyNames
+from Logs.Logger import Logger, Filetype
+from Globals.Parser import get_parsed_data
 
 parsed_data = get_parsed_data()
 

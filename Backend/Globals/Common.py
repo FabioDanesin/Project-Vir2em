@@ -3,9 +3,9 @@ import time
 import typing
 
 from opcua import Node
-from Backend.Globals import KeyNames
-from Backend.Control import Actor, Monitor
-from Backend.Configuration.DBmanager import DBmanager
+from Globals import KeyNames
+from Control import Actor, Monitor
+from Configuration.DBmanager import DBmanager
 from Parser import get_parsed_data
 
 monitor = Monitor.Monitor.get_instance()

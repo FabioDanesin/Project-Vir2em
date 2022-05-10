@@ -2,7 +2,7 @@ import typing
 
 from typing import List, Dict
 
-from Backend.Control import Monitor
+from Control import Monitor
 from opcua import ua, Node
 
 instance = None

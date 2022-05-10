@@ -183,9 +183,9 @@ def deletecookie(key, resp=None) -> None:
 # -------------------------------------------------------------------------------------------------------------------- #
 
 # Ip del server in cui viene eseguito il server flask
-HOST = parserdata.get(KeyNames.site_ip)
+HOST = "24.0.0.105"
 # Porta del server
-PORT = parserdata.get(KeyNames.site_port)
+PORT = 10000
 SSL = False
 MAXATTEMPTS = 5
 
