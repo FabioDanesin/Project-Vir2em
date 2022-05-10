@@ -12,4 +12,6 @@ logs = "LOGSPATH"
 site_ip = "SITEIP"
 site_port = "SITEPORT"
 samples = "SAMPLES"
+api_ip = "API_IP"
+api_port = "API_PORT"
 # L'unico scopo del file è contenere tutte le keyword usate nel programma per le variabili ottenute dal parser
