@@ -9,4 +9,4 @@ COPY . .
 RUN apk add build-base libffi-dev libpq-dev
 RUN pip3 install -Ur Requirements.txt
 
-RUN python3 MainPage.py
+# RUN python3 MainPage.py
