@@ -3,14 +3,9 @@ import json
 import typing
 from typing import Dict
 import jwt
-
-# Danilo non toccare sta roba
-
 from flask import Flask, redirect, request, url_for, make_response, Response, jsonify
 from json import loads
 from functools import wraps
-
-# import Control.Monitor
 from Globals import KeyNames
 from Configuration.DBmanager import DBmanager
 from Globals.Parser import get_parsed_data
@@ -194,7 +189,7 @@ PORT = parserdata.get(KeyNames.site_port)
 SSL = False
 MAXATTEMPTS = 5
 
-# Inizializzazione di flask -------------- #
+# -------------- Inizializzazione di flask -------------- #
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '0f5d43f1ae8b1926f45c562c2adb7fffcea42fa5c95849d6589398cf768776b3'
 app.config['ENV'] = "development"
