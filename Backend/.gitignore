@@ -6,3 +6,4 @@
 /FlaskRun.ps1
 /Vir2em_logs/*
 /Backend/database/alldump.sql
+/Vir2em_logs/*.txt

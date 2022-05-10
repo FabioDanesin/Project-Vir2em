@@ -11,7 +11,7 @@ RUN mkdir -p ${ROOT}
 WORKDIR ${ROOT}
 
 #Comandi in bash per la creazione degli error e access log corrispondenti.
-RUN mkidr ./error ./access
+RUN mkdir ./error ./access
 RUN touch error/error.log access/access.log
 
 #Copio i vari log e .conf

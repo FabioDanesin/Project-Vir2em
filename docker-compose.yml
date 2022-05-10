@@ -10,8 +10,8 @@ services:
     ports:
       - '8000:80'
     volumes:
-      - ./dist/my-app/:/usr/share/nginx/html:ro
-      - ./src/nginx/:/etc/nginx/nginx.conf:ro
+      - Frontend/dist/my-app/:/usr/share/nginx/html:rw
+      - Frontend/src/nginx/:/etc/nginx/nginx.conf:rw
     depends_on:
       - backend
     restart: always
