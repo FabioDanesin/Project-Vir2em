@@ -4,5 +4,5 @@
 /token.txt
 /Frontend/templates/my-app/node_modules
 /FlaskRun.ps1
-/Configuration/ProjectData.txt
 /Vir2em_logs/*
+/Backend/database/alldump.sql
