@@ -19,5 +19,3 @@ COPY ${FILES}/nginx.conf /etc/nginx/nginx.conf
 COPY ${FILES}/access.log access/access.log
 COPY ${FILES}/error.log  error/error.log
 
-EXPOSE 8080
-
