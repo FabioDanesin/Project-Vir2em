@@ -1,39 +1,50 @@
 version: '3'
+
+volumes:
+  database:
+
 services:
   frontend:
-    build: Vir2em-Project-Frontend/Project-Vir2em-Frontend/Frontend
+    build: Frontend/
     container_name: Vir2em
-    expose:
-      - 8000:80
+    ports:
+      - '8000:80'
     volumes:
       - ./dist/my-app/:/usr/share/nginx/html:ro
       - ./src/nginx/:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
     restart: always
-
-  backend:
-    build: Vir2em-Project-Frontend/Project-Vir2em-Frontend/Frontend
-    expose:
-      - 9000:5000
-    restart: always
-    depends_on:
-      - db
     networks:
       - backnetwork
       - frontnetwork
 
-  db:
-    build: Vir2em-Project-Frontend/Project-Vir2em-Frontend/Frontend/database
+  backend:
+    build: Backend/
+    ports:
+      - '9000:5000'
+    restart: always
+    depends_on:
+      - database
+    networks:
+      - backnetwork
+      - frontnetwork
+
+  database:
+    build: Backend/database
     container_name: database
-    expose:
-      - 10000:5432 #Default di postgres.
+    ports:
+      - '10000:5432' #Default di postgres.
     restart: always
     networks:
       - backnetwork
     volumes:
-      - /var/lib/postgres/14/:/var/lib/postgres/:rw
-    
+      - database:/var/lib/postgresql/data:rw
+    environment:
+      - PGDATA=/var/lib/postgresql/data
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
 networks:
   frontnetwork:
     driver: bridge 

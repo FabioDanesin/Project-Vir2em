@@ -5,9 +5,9 @@ ENV PYTHONDIRECTORY=/vir2em/python
 
 RUN mkdir -p ${PYTHONDIRECTORY}
 WORKDIR ${PYTHONDIRECTORY}
+COPY . .
+RUN apk add build-base libffi-dev libpq-dev
 RUN pip3 install -Ur Requirements.txt
-
-COPY .. .
 
 EXPOSE 6000
 
