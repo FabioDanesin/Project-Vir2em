@@ -6,29 +6,24 @@ volumes:
 services:
   frontend:
     build: Frontend/
-    container_name: Vir2em
+    container_name: vir2em-ui
     ports:
       - '8000:80'
     volumes:
-      - Frontend/dist/my-app/:/usr/share/nginx/html:rw
-      - Frontend/src/nginx/:/etc/nginx/nginx.conf:rw
+      - ./Frontend/dist/my-app/:/usr/share/nginx/html:rw
+      - ./Frontend/src/nginx/:/etc/nginx/:rw
     depends_on:
       - backend
     restart: always
-    networks:
-      - backnetwork
-      - frontnetwork
 
   backend:
+    container_name: backend
     build: Backend/
     ports:
       - '9000:5000'
     restart: always
     depends_on:
       - database
-    networks:
-      - backnetwork
-      - frontnetwork
 
   database:
     build: Backend/database
@@ -36,18 +31,9 @@ services:
     ports:
       - '10000:5432' #Default di postgres.
     restart: always
-    networks:
-      - backnetwork
     volumes:
       - database:/var/lib/postgresql/data:rw
     environment:
       - PGDATA=/var/lib/postgresql/data
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-
-networks:
-  frontnetwork:
-    driver: bridge 
-
-  backnetwork:
-    driver: bridge
