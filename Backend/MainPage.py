@@ -7,7 +7,7 @@ from flask import Flask, redirect, request, url_for, make_response, Response, js
 from json import loads
 from functools import wraps
 from Globals import KeyNames
-from Configuration.DBmanager import DBmanager
+from Configuration.DBmanager import DBmanager, get_from_parsed_data
 from Globals.Parser import get_parsed_data
 from Logs.Logger import Filetype, Logger
 from Utils import hash_str
@@ -183,9 +183,9 @@ def deletecookie(key, resp=None) -> None:
 # -------------------------------------------------------------------------------------------------------------------- #
 
 # Ip del server in cui viene eseguito il server flask
-HOST = "24.0.0.105"
+HOST = get_from_parsed_data(KeyNames.api_ip)
 # Porta del server
-PORT = 10000
+PORT = get_from_parsed_data(KeyNames.api_port)
 SSL = False
 MAXATTEMPTS = 5
 

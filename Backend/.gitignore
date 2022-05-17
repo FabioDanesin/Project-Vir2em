@@ -1,9 +1,7 @@
 #per la parte di angular
-
 /*.sh
 /token.txt
 /Frontend/templates/my-app/node_modules
 /FlaskRun.ps1
-/Vir2em_logs/*
-/Backend/database/alldump.sql
-/Vir2em_logs/*.txt
+/Vir2em_logs
+./Backend/database/init.sql
