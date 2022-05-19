@@ -7,4 +7,3 @@ scramp
 flask_login
 requests
 jwt
-psycopg2

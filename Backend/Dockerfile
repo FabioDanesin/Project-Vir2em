@@ -1,14 +1,26 @@
-FROM python:3.9-alpine 
-#Distro alpine con python 3.9
+FROM ubuntu:latest
+# Distro alpine con python 3.9
 
 ENV PYTHONDIRECTORY=/vir2em/python
-
+# Il flag -p crea anche il path del parent se non esiste
 RUN mkdir -p ${PYTHONDIRECTORY}
+
+# Cambio directory nel container e copio l'intero progetto
 WORKDIR ${PYTHONDIRECTORY}
 COPY . .
 
-#No cache -> non mantiene una copia del package index
-RUN apk add --no-cache build-base libffi-dev libpq-dev 
+# Aggiorno la lista dei pacchetti
+RUN apt-get update
+
+# Pip e l'interprete di python
+RUN apt-get install -y python3 python3-pip
+
+# Il dialect per la comunicazione con il DB da parte di sqlalchemy.
+#Nota che psycopg2 NON deve essere incluso nel file dei requirements, dato che si rifiuta di installarlo altrimenti
+RUN pip3 install psycopg2-binary
+
+# Installo il resto dei pacchetti
 RUN pip3 install -Ur Requirements.txt
 
+# Lancio l'app
 ENTRYPOINT [ "python3" , "MainPage.py"]
