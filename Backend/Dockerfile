@@ -15,10 +15,6 @@ RUN apt-get update
 # Pip e l'interprete di python
 RUN apt-get install -y python3 python3-pip
 
-# Il dialect per la comunicazione con il DB da parte di sqlalchemy.
-#Nota che psycopg2 NON deve essere incluso nel file dei requirements, dato che si rifiuta di installarlo altrimenti
-RUN pip3 install psycopg2-binary
-
 # Installo il resto dei pacchetti
 RUN pip3 install -Ur Requirements.txt
 

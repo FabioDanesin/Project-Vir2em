@@ -4,32 +4,34 @@ volumes:
   database:
 
 services:
-  frontend:
+
+  #Nginx reverse proxy
+  nginx:
     build: Frontend/
     container_name: vir2em-ui
     ports:
       - '8000:80'
+      - '8001:81'
+      - '8002:82'
     volumes:
       - ./Frontend/dist/my-app/:/usr/share/nginx/html:rw
       - ./Frontend/src/nginx/:/etc/nginx/:rw
     depends_on:
-      - backend
+      - flask
     restart: always
 
-  backend:
+  #API Flask
+  flask:
     container_name: backend
     build: Backend/
-    ports:
-      - '9000:5000'
     restart: always
     depends_on:
       - database
 
+  #Postgres database
   database:
     build: Backend/database
     container_name: database
-    ports:
-      - '10000:5432' #Default di postgres.
     restart: always
     volumes:
       - database:/var/lib/postgresql/data:rw
