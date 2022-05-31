@@ -1,7 +1,7 @@
 version: '3'
 
 volumes:
-  database:
+  database_data:
 
 services:
 
@@ -11,8 +11,6 @@ services:
     container_name: vir2em-ui
     ports:
       - '8000:80'
-      - '8001:81'
-      - '8002:82'
     volumes:
       - ./Frontend/dist/my-app/:/usr/share/nginx/html:rw
       - ./Frontend/src/nginx/:/etc/nginx/:rw
@@ -27,6 +25,8 @@ services:
     restart: always
     depends_on:
       - database
+    ports:
+      - '157.138.24.164:9000:6000'
 
   #Postgres database
   database:
@@ -34,8 +34,11 @@ services:
     container_name: database
     restart: always
     volumes:
-      - database:/var/lib/postgresql/data:rw
+      - database_data:/var/lib/postgresql/data:rw
+      - ./Backend/database/:/docker-entrypoint-initdb.d/:ro
     environment:
       - PGDATA=/var/lib/postgresql/data
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    ports:
+      - '6543:5432'

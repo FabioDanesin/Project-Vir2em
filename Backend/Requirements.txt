@@ -6,5 +6,5 @@ opcua~=0.98.13
 scramp
 flask_login
 requests
-jwt
+pyjwt
 psycopg2-binary
