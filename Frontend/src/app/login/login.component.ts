@@ -1,22 +1,23 @@
 import { Component, NgModule, OnInit } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { Globals } from 'src/globals';
-const crypto = require('crypto-js');
+import { AppRoutingModule } from '../app-routing.module';
+import { AppComponent } from '../app.component';
+const crypto  = require('crypto-js');
 
-/**
- * 
- @NgModule({
-	 declarations: [
-		 LoginComponent
-		],
-		imports: [
-			BrowserModule,
-			AppRoutingModule
-		],
-		providers: [],
-		bootstrap: [AppComponent]
-	})
-	*/
+@NgModule({
+	declarations: [
+		LoginComponent
+	],
+	imports: [
+		BrowserModule,
+		AppRoutingModule
+	],
+	providers: [],
+	bootstrap: [AppComponent]
+})
+
 @Component({
 	selector: 'app-login',
 	templateUrl: './login.component.html',

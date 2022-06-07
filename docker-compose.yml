@@ -10,7 +10,7 @@ services:
     build: Frontend/
     container_name: vir2em-ui
     ports:
-      - '8000:80'
+      - '157.138.24.164:8000:80'
     volumes:
       - ./Frontend/dist/my-app/:/usr/share/nginx/html:rw
       - ./Frontend/src/nginx/:/etc/nginx/:rw
