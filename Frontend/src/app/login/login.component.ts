@@ -5,7 +5,7 @@ import { Globals } from 'src/globals';
 import { AppRoutingModule } from '../app-routing.module';
 import { AppComponent } from '../app.component';
 const crypto  = require('crypto-js');
-
+/*
 @NgModule({
 	declarations: [
 		LoginComponent
@@ -17,6 +17,8 @@ const crypto  = require('crypto-js');
 	providers: [],
 	bootstrap: [AppComponent]
 })
+*/
+
 
 @Component({
 	selector: 'app-login',
@@ -37,7 +39,7 @@ export class LoginComponent implements OnInit {
 		const port = Globals.VIR2EMAPI_PORT;
 		const protocol = Globals.VIR2EMAPI_PROTOCOL;
 
-		//Costruisco l'url 
+		//Costruisco l'url
 		this.url = `${protocol}://${ip}:${port}`;
 
 		//Router per il rerouting della pagina.
@@ -69,16 +71,16 @@ export class LoginComponent implements OnInit {
 
 			//Creo e setto headers
 			let headers = new Headers();
-			
+
 			headers.set("Content-Type", "application/json");
 			headers.set("Accept", "application/json");
 
 			//Debug. Da ignorare per la release
 			if(this.url.match("*localhost*")){
 				headers.set("Access-Control-Allow-Origin", "http://localhost:5000/"); //TODO:eliminare
-				headers.set("Access-Control-Allow-Credentials", "true");	
+				headers.set("Access-Control-Allow-Credentials", "true");
 			}
-			
+
 			//Creo il payload
 			const body = {
 				username: hash(username?.innerHTML),
@@ -97,7 +99,7 @@ export class LoginComponent implements OnInit {
 			const token_response = fetch(this.url + '/login', request_options);
 			token_response
 				.then(
-					//Richiesta ritorna 200, ritorno il token e lo mantengo. 
+					//Richiesta ritorna 200, ritorno il token e lo mantengo.
 					(success: Response) => {
 						success
 							.text() // Brutto da morire ma TS mi costringe
@@ -112,11 +114,11 @@ export class LoginComponent implements OnInit {
 							);
 					},
 					(failure: Response) => {
-						//Ritornato errore. Invio messaggio di errore al frontend. 
+						//Ritornato errore. Invio messaggio di errore al frontend.
 						console.log(`status=${failure.status}`);
 						console.log(failure);
 						/**
-						 
+
 						 failure
 						 .json()
 							.then(
