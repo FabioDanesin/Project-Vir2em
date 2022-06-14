@@ -393,7 +393,10 @@ def login() -> Response:
             return app.response_class(
                 response=setcookie("token", encoded_token),
                 content_type="text/plain",
-                status=200
+                status=200,
+                headers={
+                    "Access-Control-Allow-Origin" : "*"
+                }
             )
         else:
             status = 400
