@@ -150,32 +150,30 @@ def get_connection_root():
     return f"{root}://{HOST}:{PORT}"
 
 
-def setcookie(key: str, value: typing.Any, resp=None) -> None:
+def setcookie(key: str, value: typing.Any) -> Response:
     """
     Funzione wrapper per il setting di un cookide dati la sua chaive e il suo valore.
 
     :param key: La chiave del cookie
     :param value: Valore da salvare nel cookie
-    :param resp: Istanza opzionale di make_response()
     :return: None
     """
-    if resp is None:
-        resp = make_response()
+    resp = make_response()
     resp.set_cookie(key, str(value), secure=True, httponly=False, samesite="Strict")
+    return resp
 
 
-def deletecookie(key, resp=None) -> None:
+def deletecookie(key) -> Response:
     """
     Funzione wrapper per la cancellazione del cookie dalla macchina client connessa. Se il cookie non esiste, fallisce
     senza lanciare un eccezione o errore.
 
     :param key: Chiave del cookie da eliminare.
-    :param resp: Istanza opzionale di make_response.
     :return: None
     """
-    if resp is None:
-        resp = make_response()
+    resp = make_response()
     resp.delete_cookie(key, secure=True, httponly=False, samesite="Strict")
+    return resp
 
 
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -345,7 +343,6 @@ def login() -> Response:
     # Al momento della pressione del bottone d'invio, la funzione legge i dati dalla POST e ottiene
     # username e password
     try:
-        print("bro")
         if request.headers.get('Content-Type') == 'application/json':
             body = request.get_json(force=True)  # Il json viene parsato automaticamente dal metodo.
             u = body["username"]
@@ -365,11 +362,12 @@ def login() -> Response:
             # La funzione check_credentials ha individuato delle credenziali valide.
             # Creo il token, contenente username e password hashati dello user e validità.
             encoded_token = generate_user_token(u, p)
+            status = 200
 
             # Dato che encoded_token è un tipo bytes, che non può essere serializzato a JSON, ritorno il token con una
             # custom response di testo normale
             return app.response_class(
-                response=encoded_token,
+                response=setcookie("token", encoded_token),
                 content_type="text/plain",
                 status=200
             )
@@ -384,8 +382,7 @@ def login() -> Response:
             print(rt)
         responsedict = {"$error": reason}
         log(reason)
-
-        return Response(
+        return app.response_class(
             response=json.dumps(responsedict),
             status=status
         )
