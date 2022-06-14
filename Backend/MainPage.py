@@ -1,7 +1,7 @@
 import datetime
 import json
 import typing
-from typing import Dict
+from typing import Dict, Tuple
 import jwt
 from flask import Flask, redirect, request, url_for, make_response, Response, jsonify
 from json import loads
@@ -358,7 +358,7 @@ def logout() -> Response:
 
 
 @app.route("/login", methods=['GET', 'POST'])
-def login() -> Response:
+def login() -> Tuple[int, Response]:
     """
     Funzione di login per Flask
     :return:
@@ -390,14 +390,7 @@ def login() -> Response:
 
             # Dato che encoded_token è un tipo bytes, che non può essere serializzato a JSON, ritorno il token con una
             # custom response di testo normale
-            return app.response_class(
-                response=setcookie("token", encoded_token),
-                content_type="text/plain",
-                status=200,
-                headers={
-                    "Access-Control-Allow-Origin" : "*"
-                }
-            )
+            return status, setcookie("token", encoded_token)
         else:
             status = 400
             raise RuntimeError(f"Questo URL accetta solo JSON, ma invece è stato dato "
@@ -409,7 +402,7 @@ def login() -> Response:
             print(rt)
         responsedict = {"$error": reason}
         log(reason)
-        return app.response_class(
+        return status, app.response_class(
             response=json.dumps(responsedict),
             status=status
         )

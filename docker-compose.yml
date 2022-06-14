@@ -22,6 +22,8 @@ services:
   flask:
     container_name: backend
     build: Backend/
+    volumes:
+      - ./Backend/:/var/log/nginx/vir2em:ro
     restart: always
     depends_on:
       - database
