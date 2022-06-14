@@ -57,8 +57,8 @@ export class LoginComponent implements OnInit {
 			//return crypto.createHash('sha256').update(p).digest('hex');
 			return crypto.SHA256(p);
 		}
-		const username = document.getElementById("username");
-		const password = document.getElementById("password");
+		const username = ((document.getElementById("username"))as HTMLInputElement)?.value;
+		const password = ((document.getElementById("password"))as HTMLInputElement)?.value;
 
 		console.log("Scraping");
 
@@ -75,11 +75,12 @@ export class LoginComponent implements OnInit {
 
 			headers.set("Content-Type", "application/json");
 			headers.set("Accept", "application/json");
+			headers.set("Access-Control-Allow-Origin", "*");
 
 			//Creo il payload
 			const body = {
-				username: hash(username?.innerHTML),
-				password: hash(password?.innerHTML)
+				username: hash(username),
+				password: hash(password)
 			}
 
 			//Body e header della richiesta
@@ -104,6 +105,7 @@ export class LoginComponent implements OnInit {
 									localStorage.setItem("access-token", token); //Storing del token
 									this.router.navigate(["/dashboard/table"]);
 									console.log("success");
+
 								}
 							);
 					},
@@ -111,20 +113,6 @@ export class LoginComponent implements OnInit {
 						//Ritornato errore. Invio messaggio di errore al frontend.
 						console.log(`status=${failure.status}`);
 						console.log(failure);
-						/**
-
-						 failure
-						 .json()
-							.then(
-								(error_data) => {
-									const parsed = JSON.parse(error_data);
-									console.log(parsed);
-									console.error(parsed.keys())
-									this.errorMessage = parsed["$error"]
-									this.getErrorMessage();
-								}
-							)
-						*/
 					}
 				)
 				.catch(

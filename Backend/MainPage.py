@@ -34,8 +34,8 @@ logfile = Logger(parserdata.get(KeyNames.logs), Logname, Filetype.LOCAL)
 
 class ContentException(RuntimeError):
     """
-    Classe wrapper semplice per incapsulamento e gestione di errori di contenuto generici per header di richieste, cookie
-    eccetera.
+    Classe wrapper semplice per incapsulamento e gestione di errori di contenuto generici per header di richieste,
+    cookie eccetera.
     """
 
     def __init__(self, reason):
@@ -150,30 +150,54 @@ def get_connection_root():
     return f"{root}://{HOST}:{PORT}"
 
 
-def setcookie(key: str, value: typing.Any) -> Response:
+def setcookie(key: str, value: typing.Any, response: Response = None) -> Response:
     """
     Funzione wrapper per il setting di un cookide dati la sua chaive e il suo valore.
 
     :param key: La chiave del cookie
     :param value: Valore da salvare nel cookie
-    :return: None
+    :param response: Response preesistente da ritornare. Opzionale.
+    :return: Response con cookie
     """
-    resp = make_response()
+    if response is None:
+        resp = make_response()
+    else:
+        resp = response
+
     resp.set_cookie(key, str(value), secure=True, httponly=False, samesite="Strict")
+
     return resp
 
 
-def deletecookie(key) -> Response:
+def deletecookie(key, response) -> Response:
     """
     Funzione wrapper per la cancellazione del cookie dalla macchina client connessa. Se il cookie non esiste, fallisce
     senza lanciare un eccezione o errore.
 
     :param key: Chiave del cookie da eliminare.
+    :param response: Response preesistente da ritornare. Opzionale.
     :return: None
     """
-    resp = make_response()
+    if response is None:
+        resp = make_response()
+    else:
+        resp = response
     resp.delete_cookie(key, secure=True, httponly=False, samesite="Strict")
+
     return resp
+
+
+def setcookies(key_value_dictionary: Dict[str, typing.Any]) -> Response:
+    """
+
+    :param key_value_dictionary: Dizionario di coppie chiave - valore.
+    :return: Response con cookie inseriti.
+    """
+    response = make_response()
+    for key in key_value_dictionary:
+        response = setcookie(key, key_value_dictionary[key], response)
+
+    return response
 
 
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -236,10 +260,10 @@ def parse_request():
     def create_datetime_from_default(defstring: str):
         # Funzione per parse, estrazione e creazione di un datetime per comparare le date in modo più comprensibile
         splitstring = defstring.split("-")
-        year = int(splitstring[0])
+        years = int(splitstring[0])
         month = int(splitstring[1])
         day = int(splitstring[2])
-        return datetime.datetime(year, month, day)
+        return datetime.datetime(years, month, day)
 
     # Anno corrente
     year = datetime.datetime.now().year
