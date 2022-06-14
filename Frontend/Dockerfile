@@ -1,4 +1,4 @@
-FROM nginx:stable
+FROM nginx:latest
 
 # Path da creare
 ENV ROOT=/var/log/nginx/vir2em
