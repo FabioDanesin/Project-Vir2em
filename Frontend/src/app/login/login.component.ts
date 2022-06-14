@@ -32,6 +32,7 @@ export class LoginComponent implements OnInit {
 	errorMessage = "";
 	hide = true;
 	url: string;
+	debug = true;
 
 	constructor(private router: Router) {
 		//Ottengo i parametri URL dal file .ts
@@ -75,12 +76,6 @@ export class LoginComponent implements OnInit {
 			headers.set("Content-Type", "application/json");
 			headers.set("Accept", "application/json");
 
-			//Debug. Da ignorare per la release
-			if(this.url.match("*localhost*")){
-				headers.set("Access-Control-Allow-Origin", "http://localhost:5000/"); //TODO:eliminare
-				headers.set("Access-Control-Allow-Credentials", "true");
-			}
-
 			//Creo il payload
 			const body = {
 				username: hash(username?.innerHTML),
@@ -109,7 +104,6 @@ export class LoginComponent implements OnInit {
 									localStorage.setItem("access-token", token); //Storing del token
 									this.router.navigate(["/dashboard/table"]);
 									console.log("success");
-
 								}
 							);
 					},
