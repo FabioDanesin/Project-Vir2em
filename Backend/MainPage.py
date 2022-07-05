@@ -11,13 +11,13 @@ from Configuration.DBmanager import DBmanager, get_from_parsed_data
 from Globals.Parser import get_parsed_data
 from Logs.Logger import Filetype, Logger
 from Utils import hash_str
-
-# from Frontend.Common import ReaderThread
+from Control import Monitor
 
 # Istanza del parser
 parserdata = get_parsed_data()
 # cartella delle pagine del frontend
 TEMPLATE_DIR = "Frontend/templates"
+monitor = Monitor.Monitor.get_instance()
 
 # -------------------------------------------------------------------------------------------------------------------- #
 #                                                  Utilities                                                           #
@@ -150,7 +150,7 @@ def get_connection_root():
     return f"{root}://{HOST}:{PORT}"
 
 
-def setcookie(key: str, value: typing.Any, response: Response = None) -> Response:
+def setcookie(key: str, value: typing.Any, response: Response = None, has_age=False) -> Response:
     """
     Funzione wrapper per il setting di un cookide dati la sua chaive e il suo valore.
 
@@ -158,13 +158,19 @@ def setcookie(key: str, value: typing.Any, response: Response = None) -> Respons
     :param value: Valore da salvare nel cookie
     :param response: Response preesistente da ritornare. Opzionale.
     :return: Response con cookie
+    :param has_age: Se il cookie ha un tempo di vita massimo di 1 ora. Se omesso, dura fino alla fine della sessione del
+                    browser.
     """
     if response is None:
         resp = make_response()
     else:
         resp = response
+    expire = None
 
-    resp.set_cookie(key, str(value), secure=True, httponly=False, samesite="Strict")
+    if has_age:
+        expire = datetime.datetime.now() + datetime.timedelta(hours=1)
+
+    resp.set_cookie(key, str(value), secure=True, httponly=False, samesite="Strict", expires=expire)
 
     return resp
 
@@ -221,14 +227,13 @@ app.config['ENV'] = "development"
 #                                                     Routes                                                           #
 # -------------------------------------------------------------------------------------------------------------------- #
 
-@app.route("/geturls")
-def urls():
-    dresp = {
-        "data": "/datarequest",
-        "test": "/sendrequest"
-    }
+@app.route("/tablenames")
+def tabnames():
+    d_var_name = {}
+    for i in range(0, len(monitor.__variables__)):
+        d_var_name[str(i)] = monitor.__variables__[i].get_browse_name()
 
-    return jsonify(dresp)
+    return craft_basic_json_response(d_var_name, 200)
 
 
 @app.route("/setcookie", methods=["GET", "POST"])
@@ -357,8 +362,8 @@ def logout() -> Response:
     return redirect(url_for("login"))
 
 
-@app.route("/login", methods=['GET', 'POST'])
-def login() -> Tuple[int, Response]:
+@app.route("/login", methods=['POST'])
+def login() -> Response:
     """
     Funzione di login per Flask
     :return:
@@ -390,7 +395,9 @@ def login() -> Tuple[int, Response]:
 
             # Dato che encoded_token è un tipo bytes, che non può essere serializzato a JSON, ritorno il token con una
             # custom response di testo normale
-            return status, setcookie("token", encoded_token)
+            resp = make_response(status)
+            setcookie("token", encoded_token, resp)
+            return resp
         else:
             status = 400
             raise RuntimeError(f"Questo URL accetta solo JSON, ma invece è stato dato "
@@ -402,10 +409,7 @@ def login() -> Tuple[int, Response]:
             print(rt)
         responsedict = {"$error": reason}
         log(reason)
-        return status, app.response_class(
-            response=json.dumps(responsedict),
-            status=status
-        )
+        return jsonify(responsedict)
 
 
 @app.route("/test_token_requirement", methods=["POST"])
