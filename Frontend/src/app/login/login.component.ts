@@ -53,29 +53,15 @@ export class LoginComponent implements OnInit {
 		//console.log("Parsing\n");
 
 		function hash(p: string) {
-
-			//return crypto.createHash('sha256').update(p).digest('hex');
 			return crypto.SHA256(p);
 		}
 		const username = ((document.getElementById("username"))as HTMLInputElement)?.value;
 		const password = ((document.getElementById("password"))as HTMLInputElement)?.value;
 
-		console.log("Scraping");
-
 		if (!username || !password) {
-			console.error("No data found");
-			this.errorMessage = "No data found";
-			this.getErrorMessage();
+			this.setErrorMessage("No data found");
 		}
 		else {
-			console.log(`Obtained : ${username} - ${password}`);
-
-			//Creo e setto headers
-			let headers = new Headers();
-
-			headers.set("Content-Type", "application/json");
-			headers.set("Accept", "application/json");
-			headers.set("Access-Control-Allow-Origin", "*");
 
 			//Creo il payload
 			const body = {
@@ -86,7 +72,6 @@ export class LoginComponent implements OnInit {
 			//Body e header della richiesta
 			let request_options: RequestInit = {
 				method: "POST",
-				headers: headers,
 				body: JSON.stringify(body),
 				redirect: "follow"
 			};
@@ -101,18 +86,23 @@ export class LoginComponent implements OnInit {
 							.text() // Brutto da morire ma TS mi costringe
 							.then(
 								(token) => {
-									console.log(token);
-									localStorage.setItem("access-token", token); //Storing del token
+									if(token != undefined)
+									{	
+										console.log(token);
+										localStorage.setItem("access-token", token); //Storing del token
+									}
 									this.router.navigate(["/dashboard/table"]);
-									console.log("success");
-
 								}
 							);
 					},
 					(failure: Response) => {
 						//Ritornato errore. Invio messaggio di errore al frontend.
-						console.log(`status=${failure.status}`);
-						console.log(failure);
+						//Setto errtxt per side effect. 
+						let errtxt : string = "";
+						failure.text().then(function(error){
+							errtxt = error;
+						})
+						this.setErrorMessage(errtxt);
 					}
 				)
 				.catch(
@@ -126,12 +116,12 @@ export class LoginComponent implements OnInit {
 	/**
 	 * Funzione per mettere a schermo il messaggio di errore e ripulirlo.
 	 */
-	getErrorMessage() {
+	setErrorMessage(errormessage : string) {
 
 		let innerHTML = document.getElementById('errors') as HTMLElement;
-		console.log(this.errorMessage);
-		innerHTML.innerHTML = this.errorMessage;
-		this.errorMessage = "";
-
+		innerHTML.innerHTML = errormessage
+		setTimeout(function(){
+			innerHTML.innerHTML = "";
+		}, 10000);
 	}
 }
