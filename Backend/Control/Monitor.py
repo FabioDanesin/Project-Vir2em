@@ -1,7 +1,6 @@
 import opcua
 from opcua import Client, Node
 from typing import List
-
 from Logs.Logger import Logger, Filetype
 from Globals.Parser import get_parsed_data
 from Globals import KeyNames
@@ -23,64 +22,66 @@ class Monitor:
     """
 
     def __init__(self, logfile_name="Monitor Log File"):
-        path = parsed_data.get(KeyNames.logs)
-        self.__logger__: Logger = Logger(path, logfile_name, Filetype.LOCAL)
+        # Previene la creazione di monitor multipli
+        if not instance:
+            path = parsed_data.get(KeyNames.logs)
+            self.__logger__: Logger = Logger(path, logfile_name, Filetype.LOCAL)
 
-        # Verificato che esiste un solo monitor, si procede alla connessione
-        self.__client__: Client = Client(_url)
-        self.__url__: str = _url
+            # Verificato che esiste un solo monitor, si procede alla connessione
+            self.__client__: Client = Client(_url)
+            self.__url__: str = _url
 
-        try:
-            # Connessione del client sul punto di ascolto definito dall' URL
-            self.__logger__.write(f"Tentativo di connessione all'URL {self.__url__}")
-            self.__client__.connect()
+            try:
+                # Connessione del client sul punto di ascolto definito dall' URL
+                self.__logger__.write(f"Tentativo di connessione all'URL {self.__url__}")
+                self.__client__.connect()
 
-            self.__logger__.write("Connessione avvenuta con successo")
-            self.__obj_node__ = self.__client__.get_objects_node()
+                self.__logger__.write("Connessione avvenuta con successo")
+                self.__obj_node__ = self.__client__.get_objects_node()
 
-            # Estrazione del nome del controller
-            controllername = parsed_data.get(KeyNames.controllername)
-            self.__logger__.write(f"Estratto nome del controller: {controllername}")
+                # Estrazione del nome del controller
+                controllername = parsed_data.get(KeyNames.controllername)
+                self.__logger__.write(f"Estratto nome del controller: {controllername}")
 
-            # Estrazione delle variabili di stato del controller
-            self.__controller_state_variables__: List[opcua.Node] = self.__obj_node__.get_children()
+                # Estrazione delle variabili di stato del controller
+                self.__controller_state_variables__: List[opcua.Node] = self.__obj_node__.get_children()
 
-            # Setup delle variabili di controllo / shortcut per update di stato del monitor.
-            self.__variables__ = None
-            self.__variables_root_node__ = None
-            self.__data_root__ = None
+                # Setup delle variabili di controllo / shortcut per update di stato del monitor.
+                self.__variables__ = None
+                self.__variables_root_node__ = None
+                self.__data_root__ = None
 
-            # Ottenimento dei parametri dal controller
-            for data in self.__controller_state_variables__:
-                # Individua il nodo che contiene il nome del controller
-                if data.get_browse_name().Name == controllername:
-                    self.__data_root__ = data
+                # Ottenimento dei parametri dal controller
+                for data in self.__controller_state_variables__:
+                    # Individua il nodo che contiene il nome del controller
+                    if data.get_browse_name().Name == controllername:
+                        self.__data_root__ = data
 
-                    # Lo spazio delle GlobalVars è hardcoded con questo nome
-                    for plcvars in self.__data_root__.get_children():
-                        if plcvars.get_browse_name().Name == "GlobalVars":
-                            self.__variables_root_node__ = plcvars
-                            self.__variables__: List[opcua.Node] = self.__variables_root_node__.get_children()
-                            break
+                        # Lo spazio delle GlobalVars è hardcoded con questo nome
+                        for plcvars in self.__data_root__.get_children():
+                            if plcvars.get_browse_name().Name == "GlobalVars":
+                                self.__variables_root_node__ = plcvars
+                                self.__variables__: List[opcua.Node] = self.__variables_root_node__.get_children()
+                                break
 
-                if self.__variables_root_node__ is not None:
-                    break
+                    if self.__variables_root_node__ is not None:
+                        break
 
-            if self.__variables__ is None:
-                # Errore: Il controller non esiste sull'indirizzo passato.
-                self.__logger__.write("Errore: nome del controller non trovato")
+                if self.__variables__ is None:
+                    # Errore: Il controller non esiste sull'indirizzo passato.
+                    self.__logger__.write("Errore: nome del controller non trovato")
+                    raise RuntimeError()
+
+                self.__logger__.write("Ottenute le seguenti variabili globali: ")
+                for a in self.__variables__:
+                    self.__logger__.__write__(f"\t{str(a)}\n")
+
+            except Exception:
+                # Se a qualsiasi punto dovesse fallire il client si disconnetterà automaticamente
+                self.__logger__.write("Errore di connessione")
+                self.__client__.disconnect()
+
                 raise RuntimeError()
-
-            self.__logger__.write("Ottenute le seguenti variabili globali: ")
-            for a in self.__variables__:
-                self.__logger__.__write__(f"\t{str(a)}\n")
-
-        except Exception:
-            # Se a qualsiasi punto dovesse fallire il client si disconnetterà automaticamente
-            self.__logger__.write("Errore di connessione")
-            self.__client__.disconnect()
-
-            raise RuntimeError()
 
     def get_variable_node(self, name: str) -> Node:
         """
