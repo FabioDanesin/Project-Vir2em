@@ -124,10 +124,10 @@ class DBmanager:
             tname = data[1]  # Username
             tpassword = data[2]  # Password associata
             islocked = data[4]  # Booleano per il blocco account. False=account libero, True=account bloccato
-
             if username == tname and password == tpassword:
-                # L'account richiesto è bloccato. Ritorno errore.
+
                 if islocked:
+                    # L'account richiesto è bloccato. Ritorno errore.
                     self.__logger__.write(f"WARNING: {username} tried accessing, but the account has been locked.")
                     raise RuntimeError(f"{username}'s account is locked. This incident will be reported")
 
