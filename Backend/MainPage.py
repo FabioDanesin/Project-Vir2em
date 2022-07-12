@@ -2,22 +2,27 @@ import datetime
 import json
 import typing
 from typing import Dict, Tuple
+
 import jwt
-from flask import Flask, redirect, request, url_for, make_response, Response, jsonify
+import requests
+from flask import Flask, redirect, request, url_for, make_response, Response, jsonify, abort
 from json import loads
 from functools import wraps
+
+import Configuration.DBmanager
 from Globals import KeyNames
 from Configuration.DBmanager import DBmanager, get_from_parsed_data
 from Globals.Parser import get_parsed_data
 from Logs.Logger import Filetype, Logger
 from Utils import hash_str
-from Control import Monitor
+
+# from Control import Monitor
 
 # Istanza del parser
 parserdata = get_parsed_data()
 # cartella delle pagine del frontend
 TEMPLATE_DIR = "Frontend/templates"
-monitor = Monitor.Monitor.get_instance()
+# monitor = Monitor.Monitor.get_instance()
 
 # -------------------------------------------------------------------------------------------------------------------- #
 #                                                  Utilities                                                           #
@@ -227,38 +232,156 @@ app.config['ENV'] = "development"
 #                                                     Routes                                                           #
 # -------------------------------------------------------------------------------------------------------------------- #
 
-@app.route("/tablenames")
+@app.errorhandler(400)
+def bad_request_handle(description):
+    """
+    Wrapper per errore bad request.
+    :param description:
+    :return:
+    """
+    return app.response_class(response=description, status=400)
+
+
+@app.route("/variable_names")
+@token_required
 def tabnames():
     d_var_name = {}
+    print(monitor.__variables__)
     for i in range(0, len(monitor.__variables__)):
         d_var_name[str(i)] = monitor.__variables__[i].get_browse_name()
-
-    return craft_basic_json_response(d_var_name, 200)
+    response = craft_basic_json_response({"names": d_var_name}, 200)
+    return response
 
 
 @app.route("/setcookie", methods=["GET", "POST"])
 def cookie():
-    if request.method == "POST":
-        payload = request.get_json(force=True)
-        setcookie("content", {"$content": payload})
+    c = request.cookies.get("number")
+    print(c)
+    if c == "" or c is None:
+        c = "0"
     else:
-        setcookie("content", {"$content": "defaultcookie"})
-    return "DONE"
+        c = str(int(c) + 1)
+    return setcookie("number", c)
 
 
 @app.route("/testcookie", methods=["GET", "POST"])
-def test():
-    r = make_response()
-    r.set_cookie('content', 'content')
-    return str(request.cookies.get("content"))
+def showcookies():
+    s = "COOKIES:"
+    for c in request.cookies:
+        s = s + "<p>" + str(c) + "</p>"
+    return s
+
+
+@app.route("/data/all", methods=["POST"])
+@token_required
+def get_all_samples():
+    """
+    Request shortcut per ottenere tutti i dati contenuti nella tabella richiesta.
+
+    Struttura della richiesta:
+
+    {
+        "names" : string list
+    }
+    :return: Dizionario JSON con ogni entry contenente il nome della variabile richiesta e una lista di valori
+             registrati per la variabile corrispondente.
+    """
+    try:
+        # Estrazione del payload e assicurata compliance con i mimetype.
+        json_payload: str = request.get_json()
+
+        if json_payload is None:
+            return app.response_class(
+                status=400,
+                response="Expected JSON mimetype, but found" + request.mimetype
+            )
+
+        # Estrazione del payload. Potrebbe lanciare JSONDecodeError se dovesse fallire.
+        json_payload: Dict[str, typing.List[str]] = json.loads(json_payload)
+
+        # Estrazione lista dei nomi. Potrebbe lanciare KeyError
+        names = json_payload.pop("names")
+
+        # Per ogni nome estraggo i valori della variabile e li inserisco in un dizionario.
+        var_names_content = {}
+        for name in names:
+            data = db.select_all_in_table(name)
+            var_names_content[name] = str(data)
+
+        return craft_basic_json_response(var_names_content)
+
+    except (json.decoder.JSONDecodeError, KeyError) as badreq_error:
+        # Uno dei due errori viene ritornato come una Bad Request.
+        abort(400, description=str(badreq_error))
+
+    except Configuration.DBmanager.SqlDataNotFoundError as sql_err:
+        # L'errore viene ignorato, ma loggato internamente
+        log(sql_err)
+        pass
+
+
+@app.route("/data/latest", methods=["POST"])
+@token_required
+def get_latest():
+    """
+    Url per ottenere l'ultimo dato inserito nel database in ordine di tempo.
+    Struttura della richiesta:
+    {
+        "name": string
+    }
+
+    Composizione della response.
+    {
+        "value" : number,
+        "time": YYYY-MM-DD
+    }
+    :return:
+    """
+    try:
+        parsed = request.get_json(True)
+        name = parsed['name']
+        v = db.__plc_data_connection__.execute(
+            f"SELECT {name}.value, {name}.timestamp "
+            f"FROM {name} "
+            "ORDER BY timestamp, hour DESC "
+            "LIMIT 1"
+        ).fetchone()
+
+        if v is None:
+            raise RuntimeError("Variabile has no measurements yet")
+        response_payload = {
+            "value": v[0],
+            "time": v[1]
+        }
+        resp = jsonify(response_payload)
+        return resp
+
+
+    except json.JSONDecodeError as jserr:
+        abort(400, description=(str(jserr)))
+
+    except Configuration.DBmanager.SqlDataNotFoundError as sqlerr:
+        abort(404, description=str(sqlerr))
+
+    except Exception as generic_exc:
+        print(generic_exc)
+        abort(500, description=str(generic_exc))
 
 
 # Prende una request a Flask e richiede il DB per una variabile
-@app.route("/datarequest", methods=["POST"])
+@app.route("/data", methods=["POST"])
 @token_required
 def parse_request():
     """
-
+    Url per la richiesta di dati per variabili singole.
+    Struttura della richiesta:
+    {
+        "names" : string,
+        "begin_day": YYYY-MM-DD", --> Opzionale
+        "end_day": YYYY-MM-DD", --> Opzionale
+        "begin_hour": "(0|23)", --> Opzionale
+        "end_hour": "(0|23)" --> Opzionale
+    }
     :return:
     """
 
@@ -320,32 +443,10 @@ def parse_request():
     except KeyError as k:
         if app.debug:
             print(f"Key error detected : {k}")
-
-        return craft_basic_json_response(
-            {
-                "$error": f"Nome chiave {k} non valida"
-            },
-            status=400
-        )
+        abort(400, description=f"Nome chiave {k} non valida")
 
     except ContentException as content:
-        return craft_basic_json_response(
-            {
-                "$error": str(content)
-            },
-            status=400
-        )
-
-
-# Test di funzionamento di json (inutile al momento)
-@app.route("/sendrequest", methods=["GET"])
-def request_url():
-    datadict = {
-        "Dataname": "NAME",
-        "Datavalue": "231"
-    }
-
-    return jsonify(datadict)
+        abort(400, description=str(content))
 
 
 # Funzione di logout dell'utente da flask
@@ -368,7 +469,6 @@ def login() -> Response:
     Funzione di login per Flask
     :return:
     """
-    status = 404
     # Al momento della pressione del bottone d'invio, la funzione legge i dati dalla POST e ottiene
     # username e password
     try:
@@ -376,8 +476,8 @@ def login() -> Response:
             body = request.get_json(force=True)  # Il json viene parsato automaticamente dal metodo.
             u = body["username"]
             p = body["password"]
-
             ipaddr: str = str(request.remote_addr)
+            print(u, p)
             u = hash_str(u)
             p = hash_str(p)
 
@@ -391,25 +491,24 @@ def login() -> Response:
             # La funzione check_credentials ha individuato delle credenziali valide.
             # Creo il token, contenente username e password hashati dello user e validità.
             encoded_token = generate_user_token(u, p)
-            status = 200
 
             # Dato che encoded_token è un tipo bytes, che non può essere serializzato a JSON, ritorno il token con una
             # custom response di testo normale
-            resp = make_response(status)
+            resp = make_response()
             setcookie("token", encoded_token, resp)
+            resp.status_code = 200
+            resp.data = "success"  # Per debug.
             return resp
         else:
-            status = 400
-            raise RuntimeError(f"Questo URL accetta solo JSON, ma invece è stato dato "
-                               f"{request.headers.get('Content-Type')}")
+            errstr = f"Questo URL accetta solo JSON, ma invece è stato dato {request.headers.get('Content-Type')}"
+            return abort(400, description=errstr)
     except RuntimeError as rt:
         # Riempimento dei parametri di errore. Verranno messi in display sulla pagina web
         reason = str(rt)
-        if app.debug:
-            print(rt)
+        print(rt)
         responsedict = {"$error": reason}
-        log(reason)
-        return jsonify(responsedict)
+        resp = craft_basic_json_response(responsedict, 401)
+        return resp
 
 
 @app.route("/test_token_requirement", methods=["POST"])
@@ -422,6 +521,14 @@ def tokentesting():
 def test_communication():
     t = {"$message": "the backend is running"}
     return jsonify(t)
+
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 
 # -------------------------------------------------------------------------------------------------------------------- #

@@ -269,9 +269,9 @@ class DBmanager:
             table = Table(
                 name,
                 metadata,
-                Column("Timestamp", DATE, nullable=False),
-                Column("Hour", INTEGER, nullable=False),
-                Column("Value", VARCHAR(20), nullable=False)
+                Column("timestamp", DATE, nullable=False),
+                Column("hour", INTEGER, nullable=False),
+                Column("value", VARCHAR(20), nullable=False)
             )
         finally:
             # Preparazione statement per l'insert
