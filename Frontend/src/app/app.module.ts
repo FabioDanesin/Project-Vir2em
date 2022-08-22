@@ -25,8 +25,9 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { LoginComponent } from './login/login.component';
 import { TableComponent } from './table/table.component';
 import { StoricoComponent } from './storico/storico.component';
+import { CookieService } from "ngx-cookie-service";
 
-@NgModule ({
+@NgModule({
   declarations: [ //dichiarazione delle pagine create da noi
     AppComponent,
     DashboardComponent,
@@ -50,8 +51,8 @@ import { StoricoComponent } from './storico/storico.component';
     MatCardModule,
     HighchartsChartModule
   ],
-  providers: [ ],
-  bootstrap: [ AppComponent ]
+  providers: [CookieService],
+  bootstrap: [AppComponent]
 })
 //@ts-ignore
 export class AppModule { }

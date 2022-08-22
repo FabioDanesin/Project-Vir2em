@@ -1,6 +1,7 @@
 import { Component, NgModule, OnInit } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { Router } from '@angular/router';
+import { CookieService } from 'ngx-cookie-service';
 import { Globals } from 'src/globals';
 import { AppRoutingModule } from '../app-routing.module';
 import { AppComponent } from '../app.component';
@@ -34,7 +35,10 @@ export class LoginComponent implements OnInit {
 	hide = true;
 	debug = true;
 
-	constructor(private router: Router) {
+	constructor(
+		private router: Router,
+		private cookieservice : CookieService
+		) {
 		//Router per il rerouting della pagina.
 		this.router = router;
 	}
@@ -61,30 +65,36 @@ export class LoginComponent implements OnInit {
 				username: hash(username),
 				password: hash(password)
 			}
-			console.log("U,P=",	body.username, body.password);
 			//Setto l'header per contenuto della risposta.
-			const headers = new Headers()
-			headers.set("Content-Type", "application/json");
-			//headers.set("Origin", "http://localhost:4200");
-			//headers.set("Access-Control-Request-Method", "POST");
-			//headers.set("Access-Control-Request-Headers", "Content-Type, Origin, Access-Control-Request-Method")
+
 			
 			//Body e header della richiesta
 			let request_options: RequestInit = {
 				method: "POST",
 				body: JSON.stringify(body),
-				headers : headers,
+				headers: {
+					'content-type': 'application/json'
+				},
 				redirect: "follow"
 			};
 
 			//Esecuzione e passaggio della callback per salvare il body
+			//linuxmanager
 			const token_response = fetch(Globals.getUrl()+ '/login', request_options);
+
 			token_response
 				.then(
 					//Richiesta ritorna 200, ritorno il token e lo mantengo.
-					(success: Response) => {
-						if(success.status == 200)
-							this.router.navigate(["/dashboard/table"]);
+					
+					(success : Response) => {
+						success
+						.json()
+						.then(
+							(responseJson)=> {
+								this.cookieservice.set('token', responseJson['token']);
+								this.router.navigate(["/dashboard/table"]);
+							}
+						)
 					},
 					(failure) => {
 						//Ritornato errore. Invio messaggio di errore al frontend.

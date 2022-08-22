@@ -492,11 +492,11 @@ def login() -> Response:
 
             # Dato che encoded_token è un tipo bytes, che non può essere serializzato a JSON, ritorno il token con una
             # custom response di testo normale
-            resp = make_response()
-            setcookie("token", encoded_token, resp)
-            resp.status_code = 200
-            resp.data = "success"  # Per debug.
-            return resp
+            return jsonify(
+                {
+                    "token": encoded_token
+                }
+            )
         else:
             errstr = f"Questo URL accetta solo JSON, ma invece è stato dato {request.headers.get('Content-Type')}"
             return abort(400, description=errstr)
