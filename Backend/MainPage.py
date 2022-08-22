@@ -470,36 +470,33 @@ def login() -> Response:
     # Al momento della pressione del bottone d'invio, la funzione legge i dati dalla POST e ottiene
     # username e password
     try:
-        if request.headers.get('Content-Type') == 'application/json':
-            body = request.get_json(force=True)  # Il json viene parsato automaticamente dal metodo.
-            u = body["username"]
-            p = body["password"]
-            ipaddr: str = str(request.remote_addr)
-            print(u, p)
-            u = hash_str(u)
-            p = hash_str(p)
+        body = request.get_json(force=True)  # Il json viene parsato automaticamente dal metodo.
+        u = body["username"]
+        p = body["password"]
+        ipaddr: str = str(request.remote_addr)
+        print(u, p)
+        u = hash_str(u)
+        p = hash_str(p)
 
-            # Controllo credenziali
-            credentials = db.check_credentials(u, p, ipaddr)
-            if credentials is None:
-                # Lo user richiesto non esiste. Registro il tentativo di connessione e ritorno un exception
-                db.log_connection_attempt(ipaddr, u, p)
-                raise RuntimeError("Username o password errati")
+        # Controllo credenziali
+        credentials = db.check_credentials(u, p, ipaddr)
+        if credentials is None:
+            # Lo user richiesto non esiste. Registro il tentativo di connessione e ritorno un exception
+            db.log_connection_attempt(ipaddr, u, p)
+            raise RuntimeError("Username o password errati")
 
-            # La funzione check_credentials ha individuato delle credenziali valide.
-            # Creo il token, contenente username e password hashati dello user e validità.
-            encoded_token = generate_user_token(u, p)
+        # La funzione check_credentials ha individuato delle credenziali valide.
+        # Creo il token, contenente username e password hashati dello user e validità.
+        encoded_token = generate_user_token(u, p)
 
-            # Dato che encoded_token è un tipo bytes, che non può essere serializzato a JSON, ritorno il token con una
-            # custom response di testo normale
-            resp = make_response()
-            setcookie("token", encoded_token, resp)
-            resp.status_code = 200
-            resp.data = "success"  # Per debug.
-            return resp
-        else:
-            errstr = f"Questo URL accetta solo JSON, ma invece è stato dato {request.headers.get('Content-Type')}"
-            return abort(400, description=errstr)
+        # Dato che encoded_token è un tipo bytes, che non può essere serializzato a JSON, ritorno il token con una
+        # custom response di testo normale
+        resp = make_response()
+        setcookie("token", encoded_token, resp)
+        resp.status_code = 200
+        resp.data = "success"  # Per debug.
+        return resp
+
     except RuntimeError as rt:
         # Riempimento dei parametri di errore. Verranno messi in display sulla pagina web
         reason = str(rt)
