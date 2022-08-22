@@ -4,7 +4,6 @@ import typing
 from typing import Dict, Tuple
 
 import jwt
-import requests
 from flask import Flask, redirect, request, url_for, make_response, Response, jsonify, abort
 from json import loads
 from functools import wraps
@@ -356,7 +355,6 @@ def get_latest():
         resp = jsonify(response_payload)
         return resp
 
-
     except json.JSONDecodeError as jserr:
         abort(400, description=(str(jserr)))
 
@@ -528,7 +526,7 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
+    return redirect(url_for(request.referrer))
 
 
 # -------------------------------------------------------------------------------------------------------------------- #
